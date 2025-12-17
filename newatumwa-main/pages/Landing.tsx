@@ -691,7 +691,7 @@ export const Landing: React.FC = () => {
                   </div>
               </div>
               <div className="border-t border-stone-100 pt-8 flex flex-col md:flex-row justify-between items-center">
-                  <p className="text-xs text-stone-400">© 2024 Atumwa Inc. All rights reserved.</p>
+                  <p className="text-xs text-stone-400">© 2025 Atumwa Inc. All rights reserved.</p>
                   <div className="flex gap-4 mt-4 md:mt-0">
                       <Globe size={16} className="text-stone-400" />
                       <span className="text-xs text-stone-500">English (US)</span>
