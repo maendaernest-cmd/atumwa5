@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MOCK_GIGS } from '../constants';
 import { MapPin, Navigation, Wifi, Layers, Filter, Activity, AlertTriangle, Bike, Clock, CheckCircle, X, Camera, FileText, MessageSquare, Phone, ChevronRight, ChevronLeft, Calendar, DollarSign, User, Star, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -67,8 +67,8 @@ export const MapPage: React.FC = () => {
 
 
   const visibleGigs = (layers.openGigsOnly
-    ? MOCK_GIGS.filter(g => g.status === 'open')
-    : MOCK_GIGS);
+    ? liveGigs.filter(g => g.status === 'open')
+    : liveGigs);
 
   // Get tasks relevant to current user
   const getRelevantTasks = () => {

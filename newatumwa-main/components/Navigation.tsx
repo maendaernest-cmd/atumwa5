@@ -143,7 +143,7 @@ export const Navigation: React.FC = () => {
       )}
 
       {/* Mobile Drawer */}
-      <div className={`fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 pt-6 transform transition-transform duration-300 md:hidden flex flex-col ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 left-0 w-72 bg-white shadow-2xl z-50 pt-6 transform transition-transform duration-300 md:hidden flex flex-col overflow-y-auto ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
          <SidebarContent />
       </div>
     </>
