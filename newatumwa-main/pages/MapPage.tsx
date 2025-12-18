@@ -67,8 +67,8 @@ export const MapPage: React.FC = () => {
 
 
   const visibleGigs = (layers.openGigsOnly
-    ? liveGigs.filter(g => g.status === 'open')
-    : liveGigs);
+    ? MOCK_GIGS.filter(g => g.status === 'open')
+    : MOCK_GIGS);
 
   // Get tasks relevant to current user
   const getRelevantTasks = () => {
