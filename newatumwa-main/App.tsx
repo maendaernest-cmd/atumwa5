@@ -37,7 +37,7 @@ const AuthenticatedApp = () => {
         {/* Global WebSocket Simulation for Chat and Admin Broadcasts */}
         <GlobalSocketListener />
 
-        <div className="z-10 relative flex-shrink-0">
+        <div className="z-40 relative flex-shrink-0">
           <Navigation />
         </div>
 
