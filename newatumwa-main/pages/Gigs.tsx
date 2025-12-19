@@ -680,7 +680,7 @@ import { useData } from '../context/DataContext';
 
 export const Gigs: React.FC = () => {
   const { user } = useAuth();
-  const { gigs, addGig, updateGigStatus } = useData(); // Use global data
+  const { gigs, addGig, updateGigStatus, assignGig } = useData(); // Use global data
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [filter, setFilter] = useState<GigType | 'all'>('all');
