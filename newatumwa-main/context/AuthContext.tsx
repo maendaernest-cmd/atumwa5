@@ -12,29 +12,45 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const savedUser = localStorage.getItem('atumwa_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      console.error('Error parsing user from local storage:', error);
+      return null;
+    }
+  });
 
   const login = (role: UserRole) => {
+    let newUser: User | null = null;
     switch (role) {
       case 'client':
-        setUser(MOCK_CLIENT);
+        newUser = MOCK_CLIENT;
         break;
       case 'atumwa':
-        setUser(MOCK_ATUMWA);
+        newUser = MOCK_ATUMWA;
         break;
       case 'admin':
-        setUser(MOCK_ADMIN);
+        newUser = MOCK_ADMIN;
         break;
+    }
+    setUser(newUser);
+    if (newUser) {
+      localStorage.setItem('atumwa_user', JSON.stringify(newUser));
     }
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('atumwa_user');
   };
 
   const verifyUser = () => {
     if (user) {
-        setUser({ ...user, isVerified: true });
+      const updatedUser = { ...user, isVerified: true };
+      setUser(updatedUser);
+      localStorage.setItem('atumwa_user', JSON.stringify(updatedUser));
     }
   };
 
