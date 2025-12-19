@@ -16,14 +16,15 @@ export const MOCK_ATUMWA: User = {
   rating: 4.8,
   location: 'Harare CBD',
   jobsCompleted: 142,
-  isVerified: false 
+  isVerified: false
 };
 
 // MOCK_CLIENT is unverified to demonstrate email verification flow
 export const MOCK_CLIENT: User = {
   ...MOCK_USERS[0],
-  isVerified: false
-}; 
+  isVerified: false,
+  locationCoordinates: { lat: -17.825, lng: 31.03 } // Near Greenwood
+};
 
 export const MOCK_ADMIN: User = {
   id: 'admin1',
@@ -33,7 +34,8 @@ export const MOCK_ADMIN: User = {
   rating: 5.0,
   location: 'Eastgate Centre',
   jobsCompleted: 0,
-  isVerified: true
+  isVerified: true,
+  locationCoordinates: { lat: -17.832, lng: 31.053 } // Eastgate
 };
 
 export const MOCK_GIGS: Gig[] = [
@@ -52,7 +54,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[1], // Dr. Moyo
     postedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
-    distance: '2.5 km'
+    distance: '2.5 km',
+    coordinates: { lat: -17.825, lng: 31.046 } // Greenwood / Avenues
   },
   {
     id: 'g2',
@@ -70,7 +73,8 @@ export const MOCK_GIGS: Gig[] = [
     postedBy: MOCK_USERS[0], // Sarah (Diaspora)
     postedAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
     distance: '1.2 km',
-    assignedTo: 'u1' // Assigned to mock Atumwa
+    assignedTo: 'u1', // Assigned to mock Atumwa
+    coordinates: { lat: -17.829, lng: 31.041 } // CBD
   },
   {
     id: 'g3',
@@ -87,7 +91,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[0], // Sarah (Diaspora)
     postedAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
-    distance: '3.0 km'
+    distance: '3.0 km',
+    coordinates: { lat: -17.8, lng: 31.039 } // Avondale
   },
   {
     id: 'g4',
@@ -105,7 +110,8 @@ export const MOCK_GIGS: Gig[] = [
     postedBy: MOCK_USERS[2], // Tinashe
     postedAt: new Date(Date.now() - 1000 * 60 * 240).toISOString(),
     distance: '8.0 km',
-    assignedTo: 'u1' // Assigned to the mock Atumwa
+    assignedTo: 'u1', // Assigned to the mock Atumwa
+    coordinates: { lat: -17.829, lng: 31.06 } // Roadport
   },
   {
     id: 'g5',
@@ -122,7 +128,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[0],
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(), // 96 hours ago (4 days)
-    distance: '11.5 km'
+    distance: '11.5 km',
+    coordinates: { lat: -17.776, lng: 31.079 } // Borrowdale
   },
   {
     id: 'g6',
@@ -139,7 +146,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[0],
     postedAt: new Date(Date.now() - 1000 * 60 * 60 * 52).toISOString(), // 52 hours ago (within last 24h of 72h window)
-    distance: '14 km'
+    distance: '14 km',
+    coordinates: { lat: -17.822, lng: 31.05 } // Meikles
   },
   {
     id: 'g7',
@@ -156,7 +164,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[1],
     postedAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    distance: '4.5 km'
+    distance: '4.5 km',
+    coordinates: { lat: -17.78, lng: 31.08 } // Borrowdale
   },
   {
     id: 'g8',
@@ -173,7 +182,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[2],
     postedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    distance: '6.2 km'
+    distance: '6.2 km',
+    coordinates: { lat: -17.81, lng: 31.046 } // Parirenyatwa
   },
   {
     id: 'g9',
@@ -191,7 +201,8 @@ export const MOCK_GIGS: Gig[] = [
     postedBy: MOCK_USERS[0],
     postedAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
     distance: '5.8 km',
-    assignedTo: 'u1'
+    assignedTo: 'u1',
+    coordinates: { lat: -17.802, lng: 31.045 } // Avondale
   },
   {
     id: 'g10',
@@ -208,7 +219,8 @@ export const MOCK_GIGS: Gig[] = [
     checklist: [],
     postedBy: MOCK_USERS[1],
     postedAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    distance: '3.1 km'
+    distance: '3.1 km',
+    coordinates: { lat: -17.831, lng: 31.043 } // CBD
   }
 ];
 

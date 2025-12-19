@@ -12,6 +12,10 @@ export interface User {
   earnings?: number;
   completedTasks?: number;
   averageRating?: number;
+  locationCoordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export type GigType = 'prescription' | 'paperwork' | 'parcel' | 'shopping';
@@ -100,6 +104,10 @@ export interface Gig {
   timeWindow?: TimeWindow;
   postedBy: User;
   postedAt: string; // ISO date string
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
   distance: string;
   assignedTo?: string; // ID of the Atumwa who accepted the gig
   assignedAt?: string;

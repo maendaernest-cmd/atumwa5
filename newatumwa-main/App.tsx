@@ -15,23 +15,37 @@ import { ClientDashboard } from './pages/ClientDashboard';
 import { GlobalSocketListener } from './components/GlobalSocketListener';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { DataProvider } from './context/DataContext';
 
 const AuthenticatedApp = () => {
   const { user } = useAuth();
 
   if (user) {
     return (
-      <div className="flex min-h-screen bg-slate-50 flex-col md:flex-row">
+
+      <div className="flex min-h-screen bg-slate-50 relative flex-col md:flex-row font-sans">
+        {/* Mesh Gradient Background */}
+        <div className="fixed inset-0 z-0 opacity-40 pointer-events-none" style={{
+          backgroundImage: `
+                radial-gradient(at 0% 0%, hsla(153, 96%, 89%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(240, 100%, 94%, 1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(153, 96%, 89%, 1) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(240, 100%, 94%, 1) 0px, transparent 50%)
+            `
+        }}></div>
+
         {/* Global WebSocket Simulation for Chat and Admin Broadcasts */}
         <GlobalSocketListener />
 
-        <Navigation />
+        <div className="z-10 relative flex-shrink-0">
+          <Navigation />
+        </div>
 
         {/*
             Mobile: pt-20 (80px) to clear the fixed h-16 (64px) header + spacing.
             Desktop: pt-6, md:px-8.
         */}
-        <main className="flex-1 max-w-7xl mx-auto w-full md:px-8 py-6 px-4 pt-20 md:pt-6 overflow-x-hidden">
+        <main className="flex-1 max-w-7xl mx-auto w-full md:px-8 py-6 px-4 pt-20 md:pt-6 overflow-x-hidden z-10 relative">
           {/* Global role + verification banner */}
           <div className="mb-4 flex flex-col gap-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1 text-xs font-semibold w-fit">
@@ -59,15 +73,15 @@ const AuthenticatedApp = () => {
               path="/"
               element={
                 user.role === 'admin' ? <Navigate to="/admin" replace /> :
-                user.role === 'atumwa' ? <Gigs /> :
-                <Home />
+                  user.role === 'atumwa' ? <Gigs /> :
+                    <Home />
               }
             />
             <Route path="/admin" element={user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" />} />
             <Route path="/dashboard" element={
               user.role === 'atumwa' ? <MessengerDashboard /> :
-              user.role === 'client' ? <ClientDashboard /> :
-              <Navigate to="/" />
+                user.role === 'client' ? <ClientDashboard /> :
+                  <Navigate to="/" />
             } />
             <Route path="/gigs" element={<Gigs />} />
             <Route path="/map" element={<MapPage />} />
@@ -93,9 +107,11 @@ const AuthenticatedApp = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <AuthenticatedApp />
-      </ToastProvider>
+      <DataProvider>
+        <ToastProvider>
+          <AuthenticatedApp />
+        </ToastProvider>
+      </DataProvider>
     </AuthProvider>
   );
 }
