@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (role: UserRole) => void;
   logout: () => void;
   verifyUser: () => void;
+  updateUser: (data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,14 +23,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
-  const login = (role: UserRole) => {
+  const login = (role: UserRole, simulateUnverified: boolean = false) => {
     let newUser: User | null = null;
     switch (role) {
       case 'client':
-        newUser = MOCK_CLIENT;
+        newUser = { ...MOCK_CLIENT, isVerified: true };
         break;
       case 'atumwa':
-        newUser = MOCK_ATUMWA;
+        newUser = { ...MOCK_ATUMWA, isVerified: !simulateUnverified };
         break;
       case 'admin':
         newUser = MOCK_ADMIN;
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(newUser);
     if (newUser) {
       localStorage.setItem('atumwa_user', JSON.stringify(newUser));
+      sessionStorage.setItem('just_logged_in', 'true');
     }
   };
 
@@ -54,8 +56,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = (data: Partial<User>) => {
+    if (user) {
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      localStorage.setItem('atumwa_user', JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, verifyUser }}>
+    <AuthContext.Provider value={{ user, login, logout, verifyUser, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { MOCK_GIGS, MOCK_USERS, MOCK_ATUMWA } from '../constants';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { Gig, GigType, PaymentMethod } from '../types';
 import { MapPin, Clock, Filter, ShoppingBag, FileText, Pill, Package, X, Search, Trash2, CheckCircle, Navigation, AlertCircle, Shield, Flag, Zap, TrendingUp, Map, MessageSquare, DollarSign, Wallet, CheckCircle2, Briefcase, Smartphone, Coins, Loader2, Home, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 
 const MOCK_LOCATIONS = [
@@ -353,6 +355,7 @@ interface PostGigModalProps {
 }
 
 const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }) => {
+  const { exchangeRates } = useData();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -363,10 +366,11 @@ const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }
     paymentMethod: 'cash_usd' as PaymentMethod
   });
   const [urgency, setUrgency] = useState<'standard' | 'express' | 'priority'>('standard');
+  const [currentStep, setCurrentStep] = useState(1);
 
-  // Dynamic Pricing Logic
+  // Dynamic Pricing Logic with ZiG conversion
   useEffect(() => {
-    let basePrice = 15;
+    let basePrice = 15; // USD
     if (formData.type === 'shopping') basePrice = 25;
     if (formData.type === 'paperwork') basePrice = 20;
     if (formData.type === 'parcel') basePrice = 18;
@@ -376,12 +380,16 @@ const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }
     if (urgency === 'express') multiplier = 1.3;
     if (urgency === 'priority') multiplier = 1.8;
 
-    // Small random variance to simulate live market demand
     const demandVariance = 1 + (Math.random() * 0.1 - 0.05);
+    let finalPrice = basePrice * multiplier * demandVariance;
 
-    const suggestedPrice = (basePrice * multiplier * demandVariance).toFixed(2);
-    setFormData(prev => ({ ...prev, price: suggestedPrice }));
-  }, [formData.type, urgency]);
+    // Convert if ZiG selected
+    if (formData.paymentMethod === 'zig') {
+      finalPrice = finalPrice * exchangeRates.usd_to_zig;
+    }
+
+    setFormData(prev => ({ ...prev, price: finalPrice.toFixed(2) }));
+  }, [formData.type, urgency, formData.paymentMethod, exchangeRates]);
 
   if (!isOpen) return null;
 
@@ -396,158 +404,197 @@ const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
-        <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-50 shrink-0">
-          <h2 className="font-bold text-lg text-slate-800">Post a New Request</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 bg-white p-1 rounded-full border border-slate-200 hover:bg-slate-100 transition-colors">
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-md">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-xl flex flex-col h-[92vh] sm:h-auto sm:max-h-[90vh] animate-in slide-in-from-bottom sm:zoom-in duration-300">
+        <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-white/50 backdrop-blur rounded-t-3xl shrink-0">
+          <div>
+            <h2 className="font-black text-xl text-slate-900 tracking-tight">Request an Errand</h2>
+            <div className="flex gap-1.5 mt-1.5">
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 1 ? 'w-4 bg-brand-500' : 'w-2 bg-slate-200'}`} />
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 2 ? 'w-4 bg-brand-500' : 'w-2 bg-slate-200'}`} />
+              <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'w-4 bg-brand-500' : 'w-2 bg-slate-200'}`} />
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all border border-slate-100">
             <X size={20} />
           </button>
         </div>
 
-        <div className="overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {(['prescription', 'paperwork', 'shopping', 'parcel'] as GigType[]).map(type => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type })}
-                    className={`flex items-center justify-center text-sm py-2 px-3 rounded-lg border capitalize transition-all ${formData.type === type
-                      ? 'bg-brand-50 border-brand-500 text-brand-700 font-bold ring-1 ring-brand-500'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                      }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="overflow-y-auto p-6 sm:p-8 custom-scrollbar">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Description & Title</label>
-              <input
-                required
-                type="text"
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent placeholder-slate-400 mb-2"
-                placeholder="Title (e.g., Pickup prescription)"
-                value={formData.title}
-                onChange={e => setFormData({ ...formData, title: e.target.value })}
-              />
-              <textarea
-                required
-                className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent min-h-[80px] placeholder-slate-400"
-                placeholder="Describe the task details, items to buy, or specific instructions..."
-                value={formData.description}
-                onChange={e => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <LocationInput
-                label="Pickup Location"
-                placeholder="Store name or address"
-                value={formData.locationStart}
-                onChange={(val) => setFormData({ ...formData, locationStart: val })}
-                required
-              />
-              <LocationInput
-                label="Drop-off Location"
-                placeholder="Delivery address"
-                value={formData.locationEnd}
-                onChange={(val) => setFormData({ ...formData, locationEnd: val })}
-                required
-              />
-            </div>
-
-            {/* Dynamic Pricing Section */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center mb-3">
-                <label className="block text-sm font-semibold text-slate-700">Urgency Level</label>
-                {urgency !== 'standard' && (
-                  <span className="text-xs font-bold text-brand-600 flex items-center gap-1 bg-brand-100 px-2 py-0.5 rounded-full">
-                    <TrendingUp size={12} /> High Demand
-                  </span>
-                )}
-              </div>
-
-              <div className="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm mb-4">
-                <button
-                  type="button"
-                  onClick={() => setUrgency('standard')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${urgency === 'standard' ? 'bg-slate-100 text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Standard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUrgency('express')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${urgency === 'express' ? 'bg-amber-100 text-amber-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  Express
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUrgency('priority')}
-                  className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center justify-center gap-1 ${urgency === 'priority' ? 'bg-red-100 text-red-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                  <Zap size={12} className={urgency === 'priority' ? 'fill-red-800' : ''} /> Priority
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Payment Method</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, paymentMethod: 'cash_usd' })}
-                    className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'cash_usd' ? 'bg-green-50 border-green-500 text-green-700 ring-1 ring-green-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    <DollarSign size={16} /> Cash (USD)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, paymentMethod: 'ecocash' })}
-                    className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'ecocash' ? 'bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    <Smartphone size={16} /> EcoCash
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, paymentMethod: 'zig' })}
-                    className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'zig' ? 'bg-amber-50 border-amber-500 text-amber-700 ring-1 ring-amber-500' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    <Coins size={16} /> ZiG
-                  </button>
+            {currentStep === 1 && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Service Category</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['prescription', 'paperwork', 'shopping', 'parcel'] as GigType[]).map(type => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, type })}
+                        className={`flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all group ${formData.type === type
+                          ? 'bg-brand-50 border-brand-500 shadow-sm shadow-brand-100'
+                          : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50/50'
+                          }`}
+                      >
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl transition-transform group-hover:scale-110 ${formData.type === type ? 'bg-white shadow-sm' : 'bg-slate-100'}`}>
+                          {type === 'prescription' ? '💊' : type === 'paperwork' ? '📄' : type === 'shopping' ? '🛒' : '📦'}
+                        </div>
+                        <span className={`text-xs font-black uppercase tracking-widest ${formData.type === type ? 'text-brand-700' : 'text-slate-500'}`}>{type}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Suggested Price (Dynamic)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-2.5 text-slate-500">$</span>
-                <input
-                  required
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  className="w-full bg-white border border-slate-300 rounded-lg pl-7 pr-4 py-2.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                  value={formData.price}
-                  onChange={e => setFormData({ ...formData, price: e.target.value })}
-                />
-              </div>
+                <div className="space-y-4">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Task Essentials</label>
+                  <input
+                    required
+                    type="text"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-bold placeholder-slate-400 focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner"
+                    placeholder="Briefly, what needs doing?"
+                    value={formData.title}
+                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                  />
+                  <textarea
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-sm font-medium placeholder-slate-400 min-h-[120px] focus:ring-2 focus:ring-brand-500 outline-none transition-all shadow-inner resize-none"
+                    placeholder="Any specific items or special instructions for the Atumwa?"
+                    value={formData.description}
+                    onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 2 && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4 items-center">
+                  <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                    <Navigation size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-blue-900 uppercase tracking-widest">Live Routing</p>
+                    <p className="text-[10px] text-blue-700 font-medium">Nearest Atumwa will be matched instantly.</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <LocationInput
+                    label="Collection Point"
+                    placeholder="Enter store name or address"
+                    value={formData.locationStart}
+                    onChange={(val) => setFormData({ ...formData, locationStart: val })}
+                    required
+                  />
+                  <div className="flex justify-center -my-2 opacity-30">
+                    <div className="h-4 w-px bg-slate-400 dashed" />
+                  </div>
+                  <LocationInput
+                    label="Final Destination"
+                    placeholder="Where are we delivering to?"
+                    value={formData.locationEnd}
+                    onChange={(val) => setFormData({ ...formData, locationEnd: val })}
+                    required
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 3 && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Select Urgency & Speed</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setUrgency('standard')}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${urgency === 'standard' ? 'border-slate-800 bg-slate-900 text-white shadow-lg' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}
+                    >
+                      <span className="text-sm font-black">Std.</span>
+                      <span className="text-[10px] font-medium opacity-70">~45m</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUrgency('express')}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${urgency === 'express' ? 'border-amber-500 bg-amber-500 text-white shadow-lg' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}
+                    >
+                      <span className="text-sm font-black">Express</span>
+                      <span className="text-[10px] font-medium opacity-90">~25m</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUrgency('priority')}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${urgency === 'priority' ? 'border-red-600 bg-red-600 text-white shadow-lg' : 'border-slate-100 text-slate-500 hover:border-slate-200'}`}
+                    >
+                      <Zap size={14} className="fill-current" />
+                      <span className="text-sm font-black">Fast</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 rounded-[2rem] p-6 text-white overflow-hidden relative">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 text-center">Settlement Details</label>
+
+                  <div className="flex justify-between items-end mb-6">
+                    <div className="space-y-1">
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">You will pay</p>
+                      <p className="text-4xl font-black">{formData.paymentMethod === 'zig' ? '' : '$'}{formData.price}{formData.paymentMethod === 'zig' ? ' ZiG' : ''}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {['cash_usd', 'ecocash', 'zig'].map(m => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, paymentMethod: m as any })}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${formData.paymentMethod === m ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'bg-white/10 text-slate-400 hover:bg-white/20'}`}
+                        >
+                          {m === 'cash_usd' ? <DollarSign size={18} /> : m === 'ecocash' ? <Smartphone size={18} /> : <Coins size={18} />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 text-center font-medium">Includes base fee + distance + {urgency} multiplier</p>
+                </div>
+              </motion.div>
+            )}
+
+            <div className="pt-4 flex gap-3">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(prev => prev - 1)}
+                  className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all font-display"
+                >
+                  Back
+                </button>
+              )}
+
+              {currentStep < 3 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentStep === 1 && (!formData.title || !formData.description)) return;
+                    if (currentStep === 2 && (!formData.locationStart || !formData.locationEnd)) return;
+                    setCurrentStep(prev => prev + 1);
+                  }}
+                  className="flex-[2] bg-brand-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-brand-700 transition-all shadow-lg shadow-brand-500/20 active:scale-95"
+                >
+                  Confirm & Continue
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  onClick={handleSubmit}
+                  className={`flex-[2] text-white py-4 rounded-2xl font-black text-sm transition-all shadow-xl active:scale-95 uppercase tracking-widest ${urgency === 'priority' ? 'bg-red-600 shadow-red-200/50' : 'bg-brand-600 shadow-brand-200/50'}`}
+                >
+                  Launch Request
+                </button>
+              )}
             </div>
-
-            <button
-              type="submit"
-              className={`w-full text-white py-3.5 rounded-lg font-bold text-sm transition-all shadow-lg mt-2 sticky bottom-0 z-10 ${urgency === 'priority' ? 'bg-red-600 hover:bg-red-700 shadow-red-200' :
-                urgency === 'express' ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200' :
-                  'bg-brand-600 hover:bg-brand-700 shadow-brand-200'
-                }`}
-            >
-              {urgency === 'priority' ? 'Post Priority Request' : 'Post Request'}
-            </button>
           </form>
         </div>
       </div>
@@ -676,11 +723,10 @@ const DashboardStats = ({ user, gigs }: { user: any, gigs: Gig[] }) => {
 };
 
 
-import { useData } from '../context/DataContext';
 
 export const Gigs: React.FC = () => {
   const { user } = useAuth();
-  const { gigs, addGig, updateGigStatus, assignGig } = useData(); // Use global data
+  const { gigs, addGig, updateGigStatus, assignGig, confirmPayment, exchangeRates } = useData(); // Use global data
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [filter, setFilter] = useState<GigType | 'all'>('all');
@@ -691,6 +737,16 @@ export const Gigs: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [completingGig, setCompletingGig] = useState<Gig | null>(null);
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.openPostModal) {
+      setIsModalOpen(true);
+      // Clean up state so it doesn't reopen on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     // Check for expired gigs logic moved here or could be in DataContext
@@ -734,11 +790,13 @@ export const Gigs: React.FC = () => {
   const handleConfirmCompletion = (finalPrice: number) => {
     if (!completingGig) return;
 
-    updateGigStatus(completingGig.id, 'completed', finalPrice); // Global update
+    // Industry Standard: Verify settlement method
+    const method = completingGig.paymentMethod;
+    confirmPayment(completingGig.id, method); // Simulated Backend API Call
 
     addToast(
       'Payment Released',
-      `Transaction complete. $${finalPrice.toFixed(2)} has been released to your wallet.`,
+      `Transaction complete. ${method === 'zig' ? 'ZiG' : 'USD'} ${finalPrice.toFixed(2)} has been released to your wallet via ${method.toUpperCase()}.`,
       'earnings'
     );
     setCompletingGig(null);

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Twitter, Chrome, Gamepad2, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Twitter, Chrome, Gamepad2, ArrowRight, Clock, CheckCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -21,19 +21,83 @@ export const Login: React.FC = () => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Determine role based on email
+    // Determine info based on email (Simulation)
     let role: 'client' | 'atumwa' | 'admin' = 'client';
+    let isPending = false;
+
     if (formData.email === 'client@atumwa.com') {
       role = 'client';
-  } else if (formData.email === 'runner@atumwa.com') {
-    role = 'atumwa';
+    } else if (formData.email === 'runner@atumwa.com') {
+      role = 'atumwa';
+    } else if (formData.email === 'pending@atumwa.com') {
+      role = 'atumwa';
+      isPending = true;
     } else if (formData.email === 'admin@atumwa.com') {
       role = 'admin';
     }
-    // For demo purposes, login with determined role
-    login(role);
-    navigate('/');
+
+    login(role, isPending);
   };
+
+  // Redirection Logic
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if ((user.role === 'atumwa' && user.isVerified) || user.role === 'client') {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, navigate]);
+
+  // If user is logged in as an unverified messenger, show pending UI
+  if (user && user.role === 'atumwa' && !user.isVerified) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in duration-500">
+          <div className="relative inline-block">
+            <div className="w-24 h-24 bg-amber-50 rounded-[2rem] flex items-center justify-center text-amber-600 mb-6 mx-auto relative z-10">
+              <Clock size={48} className="animate-pulse" />
+            </div>
+            <div className="absolute inset-0 bg-amber-200 blur-2xl opacity-20 animate-pulse"></div>
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-stone-900 mb-4 tracking-tight">Hang tight, {user.name}!</h1>
+            <p className="text-stone-500 font-medium leading-relaxed">
+              Our admins are currently reviewing your profile to ensure safety and quality for all users.
+              You'll receive an email as soon as you're approved to start earning.
+            </p>
+          </div>
+          <div className="bg-stone-50 p-6 rounded-3xl border border-stone-100 text-left space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+                <CheckCircle size={18} />
+              </div>
+              <span className="text-sm font-bold text-stone-700">Identity details received</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <span className="text-sm font-bold text-stone-700">Background check in progress</span>
+            </div>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="w-full bg-stone-900 text-white py-4 rounded-2xl font-black text-sm hover:bg-stone-800 transition-all shadow-xl shadow-stone-200 active:scale-95"
+          >
+            Check Status
+          </button>
+          <button
+            onClick={() => { localStorage.removeItem('atumwa_user'); window.location.href = '/login'; }}
+            className="text-stone-400 font-bold text-sm hover:text-stone-600 transition-colors"
+          >
+            Log out and try another account
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans flex">
@@ -45,70 +109,49 @@ export const Login: React.FC = () => {
             <img
               src="/atumwa-logo.jpeg"
               alt="Atumwa Logo"
-              className="w-10 h-10 rounded-xl object-cover"
+              className="w-12 h-12 rounded-2xl object-cover shadow-sm"
             />
-            <span className="font-bold text-2xl tracking-tight text-stone-900">Atumwa</span>
+            <span className="font-bold text-2xl tracking-tight text-stone-900 italic">Atumwa</span>
           </div>
 
-          <h1 className="text-3xl lg:text-4xl font-bold text-stone-900 mb-4 leading-tight">
-            Welcome back to your journey.
+          <h1 className="text-3xl lg:text-4xl font-black text-stone-900 mb-2 leading-tight">
+            Welcome back
           </h1>
-
-          <p className="text-stone-600 mb-8 leading-relaxed">
-            Continue connecting with reliable messengers and getting things done across Harare.
-          </p>
-
-          {/* Social Login */}
-          <div className="flex gap-4 mb-6">
-            <button className="flex-1 flex items-center justify-center gap-2 p-3 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors">
-              <Twitter size={20} className="text-stone-600" />
-              <span className="text-sm font-medium text-stone-700">Twitter</span>
-            </button>
-            <button className="flex-1 flex items-center justify-center gap-2 p-3 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors">
-              <Chrome size={20} className="text-stone-600" />
-              <span className="text-sm font-medium text-stone-700">Google</span>
-            </button>
-            <button className="flex-1 flex items-center justify-center gap-2 p-3 border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors">
-              <Gamepad2 size={20} className="text-stone-600" />
-              <span className="text-sm font-medium text-stone-700">Twitch</span>
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-stone-200"></div>
-            <span className="text-sm text-stone-500 font-medium">Or</span>
-            <div className="flex-1 h-px bg-stone-200"></div>
-          </div>
+          <p className="text-stone-500 mb-8 font-medium">Continue your journey with the family.</p>
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
+            <div className="space-y-1">
+              <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Email Address</label>
               <input
                 type="email"
                 name="email"
-                placeholder="Email"
+                placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors"
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
                 required
               />
             </div>
 
-            <div className="relative">
+            <div className="space-y-1 relative">
+              <div className="flex justify-between items-center pr-1">
+                <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Password</label>
+                <button type="button" className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:text-brand-700">Forgot?</button>
+              </div>
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 pr-12 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-colors"
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
+                className="absolute right-5 top-[42px] text-stone-400 hover:text-stone-600 transition-colors"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -116,18 +159,33 @@ export const Login: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-stone-900 hover:bg-stone-800 text-white py-3 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2 group"
+              className="w-full bg-stone-900 hover:bg-stone-800 text-white py-5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 group shadow-xl shadow-stone-200 active:scale-[0.98]"
             >
-              Continue Journey
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              Access Errands Portal
+              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
 
-          {/* Sign Up Link */}
-          <p className="text-center mt-6 text-stone-600">
+          {/* Social Divider */}
+          <div className="flex items-center gap-4 my-8">
+            <div className="flex-1 h-px bg-stone-100"></div>
+            <span className="text-[10px] text-stone-400 font-black uppercase tracking-widest">Or login with</span>
+            <div className="flex-1 h-px bg-stone-100"></div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button className="flex items-center justify-center gap-2 py-4 border border-stone-200 rounded-2xl hover:bg-stone-50 transition-all font-bold text-sm text-stone-700">
+              <Chrome size={18} /> Google
+            </button>
+            <button className="flex items-center justify-center gap-2 py-4 border border-stone-200 rounded-2xl hover:bg-stone-50 transition-all font-bold text-sm text-stone-700">
+              <Twitter size={18} /> Twitter
+            </button>
+          </div>
+
+          <p className="text-center mt-8 text-stone-500 text-sm font-medium">
             New to Atumwa?{' '}
-            <Link to="/signup" className="text-brand-600 font-semibold hover:text-brand-700 transition-colors">
-              Sign up now!
+            <Link to="/signup" className="text-brand-600 font-black hover:text-brand-700 transition-colors underline underline-offset-4">
+              Create account
             </Link>
           </p>
         </div>
@@ -150,7 +208,7 @@ export const Login: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <span className="text-2xl font-black text-stone-900">+89%</span>
             <button className="bg-black text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-stone-800 transition-colors">
-              Join Now
+              Get Started
             </button>
           </div>
           <p className="text-stone-600 text-sm">

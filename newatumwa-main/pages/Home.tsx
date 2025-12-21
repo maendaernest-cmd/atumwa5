@@ -14,14 +14,14 @@ export const Home: React.FC = () => {
   // Load broadcasts from "Server" (localStorage)
   useEffect(() => {
     const fetchBroadcasts = () => {
-        try {
-            const stored = JSON.parse(localStorage.getItem('atumwa_broadcasts') || '[]');
-            setRealtimeBroadcasts(stored);
-        } catch (e) {
-            console.error("Error loading broadcasts", e);
-        }
+      try {
+        const stored = JSON.parse(localStorage.getItem('atumwa_broadcasts') || '[]');
+        setRealtimeBroadcasts(stored);
+      } catch (e) {
+        console.error("Error loading broadcasts", e);
+      }
     };
-    
+
     fetchBroadcasts();
 
     // In a real app, this would be a socket.on('broadcast')
@@ -33,33 +33,33 @@ export const Home: React.FC = () => {
   useEffect(() => {
     // Passive Alert Simulation for Clients (Welcome Guide)
     if (user?.role === 'client') {
-        const timer = setTimeout(() => {
-            // Only show if not seen recently (mock logic)
-            if (Math.random() > 0.7) {
-                addToast(
-                    'New Article Available',
-                    'Read the latest guide: "How to maximize efficiency with Atumwa"',
-                    'message'
-                );
-            }
-        }, 3000);
-        return () => clearTimeout(timer);
+      const timer = setTimeout(() => {
+        // Only show if not seen recently (mock logic)
+        if (Math.random() > 0.7) {
+          addToast(
+            'New Article Available',
+            'Read the latest guide: "How to maximize efficiency with Atumwa"',
+            'message'
+          );
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [user, addToast]);
 
   if (!user) return null;
 
   // Filter Broadcasts relevant to the current user
-  const relevantBroadcasts = realtimeBroadcasts.filter(b => 
-      b.audience === 'all' || 
-      (b.audience === 'clients' && user.role === 'client') ||
-      (b.audience === 'atumwas' && user.role === 'atumwa')
+  const relevantBroadcasts = realtimeBroadcasts.filter(b =>
+    b.audience === 'all' ||
+    (b.audience === 'clients' && user.role === 'client') ||
+    (b.audience === 'atumwas' && user.role === 'atumwa')
   ).map(b => ({
-      id: `broadcast-${b.id}`,
-      user: MOCK_ADMIN,
-      content: `📢 ${b.title}\n\n${b.content}`,
-      time: new Date(b.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-      isBroadcast: true
+    id: `broadcast-${b.id}`,
+    user: MOCK_ADMIN,
+    content: `📢 ${b.title}\n\n${b.content}`,
+    time: new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    isBroadcast: true
   }));
 
   // Filter feed content based on user role for better relevance
@@ -102,11 +102,11 @@ export const Home: React.FC = () => {
   if (feed.length === 0) {
     if (user.role === 'client') {
       feed.push({
-          id: 99,
-          user: MOCK_ADMIN,
-          content: '📢 Platform Update: We have improved our tracking system! You can now see real-time ETA updates for all your active gigs. Happy shipping!',
-          time: 'Just now',
-          type: 'announcement'
+        id: 99,
+        user: MOCK_ADMIN,
+        content: '📢 Platform Update: We have improved our tracking system! You can now see real-time ETA updates for all your active gigs. Happy shipping!',
+        time: 'Just now',
+        type: 'announcement'
       });
     } else if (user.role === 'atumwa') {
       // Add messenger-specific fallback content
@@ -137,8 +137,8 @@ export const Home: React.FC = () => {
           <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
             {/* Header */}
             <div className="space-y-1">
-              <h1 className="text-2xl font-bold text-slate-900">Welcome back, {user.name.split(' ')[0]}!</h1>
-              <p className="text-slate-500 text-sm">Manage your errands and connect with reliable messengers.</p>
+              <h1 className="text-2xl font-bold text-slate-900">Atumwa Dashboard</h1>
+              <p className="text-slate-500 text-sm">Post errands and connect with reliable messengers across Zimbabwe.</p>
             </div>
 
             {/* Quick Actions */}
@@ -549,36 +549,36 @@ export const Home: React.FC = () => {
             {/* Dashboard Header */}
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
               <div>
-                 <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                   <ShieldAlert className="text-brand-600" /> Admin Command Center
-                 </h1>
-                 <p className="text-slate-500 text-sm">Monitor platform health, manage content, and resolve issues.</p>
+                <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                  <ShieldAlert className="text-brand-600" /> Admin Command Center
+                </h1>
+                <p className="text-slate-500 text-sm">Monitor platform health, manage content, and resolve issues.</p>
               </div>
               <div className="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm overflow-x-auto max-w-full">
-                 <button
-                   onClick={() => navigate('/admin')}
-                   className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap bg-slate-800 text-white shadow-sm"
-                 >
-                   <BarChart3 size={16} /> Analytics
-                 </button>
-                 <button
-                   onClick={() => navigate('/admin')}
-                   className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap text-slate-600 hover:bg-slate-50"
-                 >
-                   <Briefcase size={16} /> Gigs
-                 </button>
-                 <button
-                   onClick={() => navigate('/admin')}
-                   className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap text-slate-600 hover:bg-slate-50"
-                 >
-                   <AlertTriangle size={16} /> Disputes
-                 </button>
-                 <button
-                   onClick={() => navigate('/admin')}
-                   className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap text-slate-600 hover:bg-slate-50"
-                 >
-                   <Megaphone size={16} /> Content
-                 </button>
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap bg-slate-800 text-white shadow-sm"
+                >
+                  <BarChart3 size={16} /> Analytics
+                </button>
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap text-slate-600 hover:bg-slate-50"
+                >
+                  <Briefcase size={16} /> Gigs
+                </button>
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap text-slate-600 hover:bg-slate-50"
+                >
+                  <AlertTriangle size={16} /> Disputes
+                </button>
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap text-slate-600 hover:bg-slate-50"
+                >
+                  <Megaphone size={16} /> Content
+                </button>
               </div>
             </div>
 
@@ -632,54 +632,54 @@ export const Home: React.FC = () => {
             {/* Platform Overview */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                  <div className="flex justify-between items-start mb-2">
-                      <span className="text-slate-500 text-xs font-bold uppercase">Total Users</span>
-                      <Users className="text-brand-500 bg-brand-50 p-1.5 rounded-lg" size={28} />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">2,450</div>
-                  <div className="text-xs text-green-600 flex items-center gap-1 mt-1 font-medium">
-                      <TrendingUp size={12} /> +12% this week
-                  </div>
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-slate-500 text-xs font-bold uppercase">Total Users</span>
+                  <Users className="text-brand-500 bg-brand-50 p-1.5 rounded-lg" size={28} />
+                </div>
+                <div className="text-2xl font-bold text-slate-800">2,450</div>
+                <div className="text-xs text-green-600 flex items-center gap-1 mt-1 font-medium">
+                  <TrendingUp size={12} /> +12% this week
+                </div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                  <div className="flex justify-between items-start mb-2">
-                      <span className="text-slate-500 text-xs font-bold uppercase">Active Gigs</span>
-                      <Activity className="text-amber-500 bg-amber-50 p-1.5 rounded-lg" size={28} />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">142</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                      85% fulfillment rate
-                  </div>
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-slate-500 text-xs font-bold uppercase">Active Gigs</span>
+                  <Activity className="text-amber-500 bg-amber-50 p-1.5 rounded-lg" size={28} />
+                </div>
+                <div className="text-2xl font-bold text-slate-800">142</div>
+                <div className="text-xs text-slate-500 mt-1">
+                  85% fulfillment rate
+                </div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                  <div className="flex justify-between items-start mb-2">
-                      <span className="text-slate-500 text-xs font-bold uppercase">Pending Approvals</span>
-                      <Clock className="text-purple-500 bg-purple-50 p-1.5 rounded-lg" size={28} />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">23</div>
-                  <div className="text-xs text-purple-600 font-medium mt-1">
-                      Review required
-                  </div>
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-slate-500 text-xs font-bold uppercase">Pending Approvals</span>
+                  <Clock className="text-purple-500 bg-purple-50 p-1.5 rounded-lg" size={28} />
+                </div>
+                <div className="text-2xl font-bold text-slate-800">23</div>
+                <div className="text-xs text-purple-600 font-medium mt-1">
+                  Review required
+                </div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                  <div className="flex justify-between items-start mb-2">
-                      <span className="text-slate-500 text-xs font-bold uppercase">Recent Disputes</span>
-                      <AlertTriangle className="text-red-500 bg-red-50 p-1.5 rounded-lg" size={28} />
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">8</div>
-                  <div className="text-xs text-red-600 font-medium mt-1">
-                      Requires attention
-                  </div>
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-slate-500 text-xs font-bold uppercase">Recent Disputes</span>
+                  <AlertTriangle className="text-red-500 bg-red-50 p-1.5 rounded-lg" size={28} />
+                </div>
+                <div className="text-2xl font-bold text-slate-800">8</div>
+                <div className="text-xs text-red-600 font-medium mt-1">
+                  Requires attention
+                </div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                  <div className="flex justify-between items-start mb-2">
-                      <span className="text-slate-500 text-xs font-bold uppercase">Revenue</span>
-                      <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs font-bold">$$$</span>
-                  </div>
-                  <div className="text-2xl font-bold text-slate-800">$12.4k</div>
-                  <div className="text-xs text-green-600 flex items-center gap-1 mt-1 font-medium">
-                      <TrendingUp size={12} /> +5% vs last week
-                  </div>
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-slate-500 text-xs font-bold uppercase">Revenue</span>
+                  <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded text-xs font-bold">$$$</span>
+                </div>
+                <div className="text-2xl font-bold text-slate-800">$12.4k</div>
+                <div className="text-xs text-green-600 flex items-center gap-1 mt-1 font-medium">
+                  <TrendingUp size={12} /> +5% vs last week
+                </div>
               </div>
             </div>
 

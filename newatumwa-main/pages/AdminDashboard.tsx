@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Circle, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { useToast } from '../context/ToastContext';
 import { MOCK_GIGS } from '../constants';
 import {
@@ -26,7 +29,10 @@ import {
   Clock,
   Loader2,
   Bike,
-  Navigation
+  Navigation,
+  ArrowRight,
+  HelpCircle,
+  MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -39,6 +45,10 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { X } from 'lucide-react';
 
 // --- Mock Data for Analytics ---
 const INITIAL_ACTIVITY_DATA = [
@@ -128,15 +138,35 @@ const MOCK_BROADCAST_HISTORY: BroadcastMessage[] = [
   }
 ];
 
-import { useData } from '../context/DataContext';
+import { MarketRatesCard } from '../components/MarketRatesCard';
 
 // ... (keep includes)
 
 export const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
-  const { users, gigs, walletHistory, updateGigStatus } = useData(); // Global Data
-  const [activeTab, setActiveTab] = useState<'analytics' | 'content' | 'moderation' | 'gigs' | 'messaging' | 'fleet'>('analytics');
+  const { users, gigs, walletHistory, updateGigStatus, exchangeRates, inquiries, supportTickets, updateTicketStatus } = useData();
+  const [showGreeting, setShowGreeting] = useState(() => {
+    return !sessionStorage.getItem('welcome_shown_after_login');
+  });
+
+  const dismissGreeting = () => {
+    setShowGreeting(false);
+    sessionStorage.setItem('welcome_shown_after_login', 'true');
+  };
+
+  // Auto-dismiss greeting after 4 seconds
+  useEffect(() => {
+    if (showGreeting) {
+      const timer = setTimeout(() => {
+        dismissGreeting();
+      }, 4000); // 4 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [showGreeting]);
+  const [activeTab, setActiveTab] = useState<'analytics' | 'content' | 'moderation' | 'gigs' | 'messaging' | 'fleet' | 'support'>('analytics');
 
   // Calculate Real-time Stats
   const kpiStats = {
@@ -294,8 +324,102 @@ export const AdminDashboard: React.FC = () => {
     return statusMatch && typeMatch;
   });
 
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-200 text-center max-w-md">
+          <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-600 mx-auto mb-6">
+            <ShieldAlert size={40} />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Security Protocol Active</h2>
+          <p className="text-slate-500 font-medium mb-8">Access to the High-Command Interface is restricted to verified administrators only.</p>
+          <button
+            onClick={() => navigate('/login')}
+            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-lg"
+          >
+            Authenticate Identity
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-slate-50 font-sans pb-20">
+      {/* Full-Screen Welcome Greeting Overlay */}
+      <AnimatePresence>
+        {showGreeting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 20 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="text-center text-white max-w-md mx-4"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.4, ease: "backOut" }}
+                className="mb-8"
+              >
+                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                  <div className="text-4xl">👋</div>
+                </div>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="text-4xl md:text-5xl font-black mb-4 leading-tight"
+              >
+                {new Date().getHours() < 12 ? 'Welcome back, Chief' : new Date().getHours() < 18 ? 'Good afternoon, Admin' : 'Good evening, Director'},
+                <span className="block text-white/90 text-2xl md:text-3xl mt-2 font-bold">
+                  {user?.name?.split(' ')[0] || 'Admin'}!
+                </span>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+                className="text-xl text-white/80 mb-8 font-medium"
+              >
+                Platform performance is optimal. You have {supportTickets.filter(t => t.status === 'open').length} open reports to review.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+                className="flex items-center justify-center gap-4"
+              >
+                <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-sm font-bold text-white">Mainframe Link: Secure</span>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Dismiss button */}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 0.3 }}
+              onClick={dismissGreeting}
+              className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all duration-200"
+            >
+              <X size={24} />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
@@ -332,10 +456,38 @@ export const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('fleet')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'fleet' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`flex items-center px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest ${activeTab === 'fleet' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}
           >
-            <Bike size={16} /> Fleet & Ops
+            <Activity size={18} className="mr-3" />
+            Fleet Status
           </button>
+
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`flex items-center px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest ${activeTab === 'support' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}
+          >
+            <HelpCircle size={18} className="mr-3" />
+            Support Helpdesk
+          </button>
+        </div>
+      </div>
+
+      {/* Admin Performance & Rates Pulse */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <MarketRatesCard />
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Inquiries</p>
+            <p className="text-xl font-bold text-slate-800">{inquiries.length} Open</p>
+          </div>
+          <HelpCircle className="text-blue-500" size={24} />
+        </div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Server Latency</p>
+            <p className="text-xl font-bold text-slate-800">24ms</p>
+          </div>
+          <Activity className="text-green-500" size={24} />
         </div>
       </div>
 
@@ -389,6 +541,57 @@ export const AdminDashboard: React.FC = () => {
       {/* --- ANALYTICS TAB --- */}
       {activeTab === 'analytics' && (
         <div className="space-y-6 animate-in fade-in duration-300">
+
+          {/* Hyper-Live Platform Oversight (Voyager Theme) */}
+          <div className="relative h-96 w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-white group">
+            <div className="absolute inset-0 z-0">
+              <MapContainer center={[-17.8292, 31.0522]} zoom={13} style={{ height: '100%', width: '100%', background: '#f8fafc' }} zoomControl={false}>
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
+                {/* Global Heatmap Clusters */}
+                <Circle center={[-17.815, 31.030]} radius={800} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15, weight: 0 }} />
+                <Circle center={[-17.845, 31.065]} radius={1000} pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.1, weight: 0 }} />
+                <Circle center={[-17.830, 31.045]} radius={600} pathOptions={{ color: '#8b5cf6', fillColor: '#8b5cf6', fillOpacity: 0.15, weight: 0 }} />
+                {/* Live Fleet (Random dots) */}
+                {[-17.82, -17.83, -17.84, -17.825, -17.835].map((lat, i) => (
+                  <Circle key={i} center={[lat, 31.04 + (i * 0.01)]} radius={50} pathOptions={{ color: '#10b981', fillColor: '#10b981', fillOpacity: 0.8, weight: 2 }} />
+                ))}
+              </MapContainer>
+            </div>
+
+            {/* Overlay Telemetry */}
+            <div className="absolute inset-0 z-10 p-6 flex flex-col justify-between pointer-events-none">
+              <div className="flex justify-between items-start">
+                <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-4">
+                  <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_12px_#ef4444]"></div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Live Status</p>
+                    <p className="text-sm font-black text-white leading-none">High Demand Detected</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <Circle size={8} fill="#10b981" className="text-emerald-500" />
+                    <span className="text-[10px] font-black text-white uppercase">42 Active Couriers</span>
+                  </div>
+                  <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
+                    <TrendingUp size={12} className="text-brand-400" />
+                    <span className="text-[10px] font-black text-white uppercase">Surcharge: 1.2x</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end">
+                <div className="space-y-1">
+                  <p className="text-3xl font-black text-white tracking-tight">Harare Central</p>
+                  <p className="text-xs font-bold text-slate-400 tracking-wider uppercase">Regional Operations Hub</p>
+                </div>
+                <button className="bg-brand-500 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all pointer-events-auto shadow-xl shadow-brand-500/20">
+                  View Heatmap Focus
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -484,6 +687,32 @@ export const AdminDashboard: React.FC = () => {
               </div>
               <button className="w-full mt-4 text-center text-sm text-brand-600 font-medium hover:underline">
                 View System Logs
+              </button>
+            </div>
+
+            {/* Platform Inquiries Oversight */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <MessageSquare size={18} className="text-blue-500" />
+                Live Platform Inquiries
+              </h3>
+              {inquiries.length > 0 ? (
+                <div className="space-y-4">
+                  {inquiries.slice(0, 3).map((inq: any) => (
+                    <div key={inq.id} className="pb-4 border-b border-slate-50 last:border-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-xs font-bold text-slate-700">{inq.user.name}</span>
+                        <span className="text-[10px] text-slate-400">{new Date(inq.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-2">"{inq.query}" at {inq.place}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 text-center py-4">No live inquiries currently.</p>
+              )}
+              <button className="w-full mt-4 pt-4 border-t border-slate-50 text-center text-xs font-bold text-slate-400 hover:text-brand-600 uppercase tracking-widest">
+                View All Inquiries
               </button>
             </div>
           </div>
@@ -1261,6 +1490,91 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'support' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">Support Command Center</h2>
+              <p className="text-sm font-medium text-slate-500">Overseeing active resolving of platform-wide issues.</p>
+            </div>
+            <div className="flex gap-3">
+              <div className="bg-amber-50 text-amber-700 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border border-amber-200 flex items-center gap-2">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                {supportTickets.filter((t: any) => t.status === 'open').length} Response Required
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2.5rem] border border-slate-100 overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Active Incidents</h3>
+              <div className="flex gap-2">
+                <button className="p-2.5 bg-white rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"><Filter size={18} /></button>
+                <button className="p-2.5 bg-white rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"><Search size={18} /></button>
+              </div>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {supportTickets.length > 0 ? (
+                supportTickets.map((ticket: any) => (
+                  <div key={ticket.id} className="p-8 hover:bg-slate-50 transition-all group">
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex gap-5">
+                        <div className="w-14 h-14 rounded-3xl bg-white border border-slate-100 flex items-center justify-center text-2xl shadow-sm group-hover:shadow-md transition-all">
+                          {ticket.sender?.avatar ? <img src={ticket.sender.avatar} className="w-10 h-10 rounded-full" /> : '👤'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg font-black text-slate-900 tracking-tight">{ticket.subject}</span>
+                            <span className="text-xs font-black text-slate-400 font-mono tracking-tighter">#{ticket.id}</span>
+                            <div className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${ticket.urgency === 'critical' ? 'bg-red-500 text-white' :
+                              ticket.urgency === 'high' ? 'bg-orange-500 text-white' : 'bg-slate-900 text-white'
+                              }`}>
+                              {ticket.urgency}
+                            </div>
+                          </div>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                            <span>By {ticket.sender?.name}</span>
+                            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                            <span className="text-brand-600 font-black">{ticket.sender?.role}</span>
+                            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                            <span>{new Date(ticket.timestamp).toLocaleString()}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => updateTicketStatus(ticket.id, 'investigating')}
+                          className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${ticket.status === 'investigating' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                            }`}
+                        >
+                          Investigate
+                        </button>
+                        <button
+                          onClick={() => updateTicketStatus(ticket.id, 'resolved')}
+                          className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${ticket.status === 'resolved' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-600 border-green-200 hover:bg-green-50'
+                            }`}
+                        >
+                          Resolve
+                        </button>
+                      </div>
+                    </div>
+                    <div className="ml-20 bg-slate-50 border border-slate-100 rounded-[2rem] p-6 text-sm text-slate-600 leading-relaxed font-medium">
+                      "{ticket.description || ticket.message}"
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-32 text-center">
+                  <div className="w-24 h-24 bg-slate-50 rounded-[3rem] flex items-center justify-center mx-auto mb-8 text-4xl shadow-inner">🏆</div>
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Incident Queue Clear</h3>
+                  <p className="text-sm text-slate-500 font-medium max-w-sm mx-auto mt-2">All support requests have been resolved. Platform safety and trust scores are optimal.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
