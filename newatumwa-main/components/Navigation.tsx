@@ -3,20 +3,24 @@ import { NavLink } from 'react-router-dom';
 import { Home, Briefcase, Map, MessageSquare, User, LogOut, CheckCircle, Menu, X, LayoutDashboard, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
+import { cn } from '../utils/cn';
 
 const NavItem = ({ to, icon: Icon, label, isCollapsed }: { to: string; icon: any; label: string; isCollapsed?: boolean }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center ${isCollapsed ? 'px-3 justify-center' : 'px-4 mx-2'} py-3 rounded-lg transition-colors font-medium ${isActive
-        ? 'text-brand-600 bg-brand-50'
-        : 'text-slate-500 hover:text-brand-600 hover:bg-slate-50'
-      }`
+      cn(
+        'flex items-center py-3 rounded-xl transition-all font-semibold focus-ring',
+        isCollapsed ? 'px-3 justify-center' : 'px-4 mx-2',
+        isActive
+          ? 'text-brand bg-brand-50 shadow-sm'
+          : 'text-stone-600 hover:text-brand hover:bg-stone-50'
+      )
     }
     title={isCollapsed ? label : undefined}
   >
-    <Icon className="w-5 h-5" />
-    {!isCollapsed && <span className="text-base ml-3">{label}</span>}
+    <Icon className="w-5 h-5 flex-shrink-0" />
+    {!isCollapsed && <span className="text-sm ml-3">{label}</span>}
   </NavLink>
 );
 
@@ -31,23 +35,23 @@ export const Navigation: React.FC = () => {
 
   const SidebarContent = ({ isCollapsed }: { isCollapsed?: boolean }) => (
     <>
-      <div className={`${isCollapsed ? 'px-3' : 'px-6'} mb-8 flex items-center justify-between`}>
+      <div className={cn(isCollapsed ? 'px-3' : 'px-6', 'mb-8 flex items-center justify-between')}>
         <div className="flex items-center">
           {!isCollapsed && (
             <>
               <img
                 src="/atumwa-logo.jpeg"
                 alt="Atumwa Logo"
-                className="w-10 h-10 rounded-md object-cover mr-2"
+                className="w-10 h-10 rounded-lg object-cover mr-3 shadow-sm"
               />
-              <span className="text-2xl font-bold text-slate-800 tracking-tight">Atumwa</span>
+              <span className="text-heading-sm text-stone-900 font-black">Atumwa</span>
             </>
           )}
           {isCollapsed && (
             <img
               src="/atumwa-logo.jpeg"
               alt="Atumwa Logo"
-              className="w-8 h-8 rounded-md object-cover"
+              className="w-8 h-8 rounded-lg object-cover shadow-sm"
             />
           )}
         </div>
@@ -55,14 +59,14 @@ export const Navigation: React.FC = () => {
           {/* Collapse toggle button - only on desktop */}
           <button
             onClick={toggleCollapse}
-            className="hidden md:flex items-center justify-center w-8 h-8 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+            className="hidden md:flex items-center justify-center w-8 h-8 text-stone-500 hover:text-brand hover:bg-stone-50 rounded-lg transition-colors focus-ring"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
           {/* Close button only visible on mobile inside drawer */}
-          <button onClick={closeMobileMenu} className="md:hidden text-slate-500 p-1 hover:bg-slate-100 rounded-full">
-            <X size={24} />
+          <button onClick={closeMobileMenu} className="md:hidden text-stone-500 p-2 hover:bg-stone-100 rounded-lg focus-ring">
+            <X size={20} />
           </button>
         </div>
       </div>
@@ -83,41 +87,45 @@ export const Navigation: React.FC = () => {
 
 
 
-      <div className="mt-auto border-t border-slate-100 dark:border-slate-700">
+      <div className="mt-auto border-t border-stone-200">
         {user && (
-          <div className={`${isCollapsed ? 'p-3' : 'p-4'}`}>
+          <div className={cn(isCollapsed ? 'p-3' : 'p-4', 'space-y-3')}>
             {/* Theme Toggle */}
             {!isCollapsed && (
-              <div className="mb-3 px-2">
+              <div className="px-2">
                 <ThemeToggle />
               </div>
             )}
 
             {!isCollapsed && (
-              <div className="flex items-center gap-3 mb-3 px-2">
+              <div className="flex items-center gap-3 px-2">
                 <div className="relative">
-                  <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full" />
+                  <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full shadow-sm border-2 border-white" />
                   {user.isVerified && (
-                    <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full p-0.5">
-                      <CheckCircle size={12} className="text-blue-500 fill-white dark:fill-slate-800" />
+                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                      <CheckCircle size={14} className="text-brand fill-white" />
                     </div>
                   )}
                 </div>
-                <div className="overflow-hidden">
-                  <p className="text-sm font-bold text-slate-700 truncate flex items-center gap-1">
+                <div className="overflow-hidden flex-1">
+                  <p className="text-sm font-bold text-stone-900 truncate">
                     {user.name}
                   </p>
-                  <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+                  <p className="text-caption text-stone-500 capitalize">{user.role}</p>
                 </div>
               </div>
             )}
+
             <button
               onClick={() => { logout(); closeMobileMenu(); }}
-              className={`w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 p-2 rounded-lg text-sm font-medium transition-colors ${isCollapsed ? 'px-2' : ''}`}
+              className={cn(
+                'w-full flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 p-3 rounded-xl text-sm font-semibold transition-all focus-ring',
+                isCollapsed ? 'px-2' : ''
+              )}
               title={isCollapsed ? "Sign Out" : undefined}
             >
-              <LogOut size={16} />
-              {!isCollapsed && <span className="ml-2">Sign Out</span>}
+              <LogOut size={18} />
+              {!isCollapsed && <span>Sign Out</span>}
             </button>
           </div>
         )}
@@ -128,21 +136,21 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <nav className={`hidden md:flex flex-col bg-white border-r border-slate-200 h-screen sticky top-0 left-0 pt-6 shadow-sm z-30 overflow-y-auto scrollbar-hide transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64 lg:w-72 xl:w-80'}`}>
+      <nav className={`hidden md:flex flex-col bg-white border-r border-stone-200 h-screen sticky top-0 left-0 pt-6 shadow-lg z-30 overflow-y-auto scrollbar-hide transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64 lg:w-72 xl:w-80'}`}>
         <SidebarContent isCollapsed={isCollapsed} />
       </nav>
 
       {/* Mobile Top Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 z-50 shadow-sm">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-stone-200 h-16 flex items-center justify-between px-4 z-50 shadow-sm">
         <div className="flex items-center min-w-0 flex-1">
           <img
             src="/atumwa-logo.jpeg"
             alt="Atumwa Logo"
-            className="w-10 h-10 rounded-md object-cover mr-2 flex-shrink-0"
+            className="w-10 h-10 rounded-lg object-cover mr-3 shadow-sm flex-shrink-0"
           />
-          <span className="text-xl font-bold text-slate-800 truncate">Atumwa</span>
+          <span className="text-heading-sm text-stone-900 font-black truncate">Atumwa</span>
         </div>
-        <button onClick={toggleMobileMenu} className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg flex-shrink-0 cursor-pointer">
+        <button onClick={toggleMobileMenu} className="p-2 text-stone-600 hover:bg-stone-100 rounded-lg flex-shrink-0 cursor-pointer focus-ring">
           <Menu size={24} />
         </button>
       </div>

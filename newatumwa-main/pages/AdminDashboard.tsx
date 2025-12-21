@@ -148,21 +148,24 @@ export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { users, gigs, walletHistory, updateGigStatus, exchangeRates, inquiries, supportTickets, updateTicketStatus } = useData();
   const [showGreeting, setShowGreeting] = useState(() => {
-    return !sessionStorage.getItem('welcome_shown_after_login');
+    // Only show greeting immediately after login
+    const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
+    if (justLoggedIn) {
+      sessionStorage.removeItem('just_logged_in');
+      return true;
+    }
+    return false;
   });
 
   const dismissGreeting = () => {
     setShowGreeting(false);
-    sessionStorage.setItem('welcome_shown_after_login', 'true');
   };
 
-  // Auto-dismiss greeting after 4 seconds
   useEffect(() => {
     if (showGreeting) {
       const timer = setTimeout(() => {
         dismissGreeting();
-      }, 4000); // 4 seconds
-
+      }, 4000); // Show for exactly 4 seconds
       return () => clearTimeout(timer);
     }
   }, [showGreeting]);
@@ -345,15 +348,18 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans pb-20">
-      {/* Full-Screen Welcome Greeting Overlay */}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 relative overflow-hidden">
+      <div className="absolute top-20 left-10 w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full opacity-20 animate-pulse"></div>
+      <div className="absolute top-40 right-20 w-16 h-16 bg-gradient-to-br from-pink-400 to-red-500 rounded-full opacity-20 animate-pulse" style={{animationDelay: '1s'}}></div>
+      <div className="absolute bottom-20 left-20 w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full opacity-20 animate-pulse" style={{animationDelay: '2s'}}></div>
+
       <AnimatePresence>
         {showGreeting && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 flex items-center justify-center"
+            className="fixed inset-0 z-[1000] bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 flex items-center justify-center"
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0, y: 20 }}
@@ -368,7 +374,7 @@ export const AdminDashboard: React.FC = () => {
                 transition={{ delay: 0.2, duration: 0.4, ease: "backOut" }}
                 className="mb-8"
               >
-                <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                <div className="w-32 h-32 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
                   <div className="text-4xl">👋</div>
                 </div>
               </motion.div>
@@ -377,10 +383,10 @@ export const AdminDashboard: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
-                className="text-4xl md:text-5xl font-black mb-4 leading-tight"
+                className="text-4xl md:text-6xl font-black mb-4 leading-tight"
               >
                 {new Date().getHours() < 12 ? 'Welcome back, Chief' : new Date().getHours() < 18 ? 'Good afternoon, Admin' : 'Good evening, Director'},
-                <span className="block text-white/90 text-2xl md:text-3xl mt-2 font-bold">
+                <span className="block text-white/90 text-3xl md:text-4xl mt-2 font-bold">
                   {user?.name?.split(' ')[0] || 'Admin'}!
                 </span>
               </motion.h1>
@@ -389,7 +395,7 @@ export const AdminDashboard: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
-                className="text-xl text-white/80 mb-8 font-medium"
+                className="text-xl text-white/90 mb-8 font-medium"
               >
                 Platform performance is optimal. You have {supportTickets.filter(t => t.status === 'open').length} open reports to review.
               </motion.p>
@@ -400,26 +406,160 @@ export const AdminDashboard: React.FC = () => {
                 transition={{ delay: 0.8, duration: 0.5 }}
                 className="flex items-center justify-center gap-4"
               >
-                <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                <div className="bg-white/20 backdrop-blur-sm px-6 py-3 rounded-2xl flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
                   <span className="text-sm font-bold text-white">Mainframe Link: Secure</span>
                 </div>
               </motion.div>
             </motion.div>
 
-            {/* Dismiss button */}
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 0.3 }}
               onClick={dismissGreeting}
-              className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all duration-200"
+              className="absolute top-8 right-8 w-14 h-14 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-2xl flex items-center justify-center text-white transition-all duration-200"
             >
-              <X size={24} />
+              <X size={28} />
             </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 p-6 lg:p-8"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
+            <div>
+              <motion.h1
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-4xl lg:text-6xl font-black text-stone-900 mb-2"
+              >
+                Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-xl text-stone-600 font-medium"
+              >
+                Admin Command Center - Platform Oversight
+              </motion.p>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-2xl flex items-center gap-3 shadow-lg"
+            >
+              <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+              <span className="font-bold">System Status: Optimal</span>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8"
+          >
+            <div className="card p-6 group hover:scale-105 transition-transform">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                  <Users size={24} />
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-stone-900 leading-tight">{kpiStats.users.toLocaleString()}</div>
+                  <div className="text-sm text-stone-500 font-medium">Total Users</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-6 group hover:scale-105 transition-transform">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
+                  <Activity size={24} />
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-stone-900 leading-tight">{kpiStats.activeGigs}</div>
+                  <div className="text-sm text-stone-500 font-medium">Active Gigs</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-6 group hover:scale-105 transition-transform">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-stone-900 leading-tight">{kpiStats.disputes}</div>
+                  <div className="text-sm text-stone-500 font-medium">Disputes</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="card p-6 group hover:scale-105 transition-transform">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
+                  <DollarSign size={24} />
+                </div>
+                <div>
+                  <div className="text-2xl font-black text-stone-900 leading-tight">${(kpiStats.revenue / 1000).toFixed(1)}k</div>
+                  <div className="text-sm text-stone-500 font-medium">Revenue</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          >
+            <div className="card p-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => setActiveTab('analytics')}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center text-brand-600">
+                  <BarChart3 size={24} />
+                </div>
+                <span className="font-bold text-center text-stone-900">Analytics</span>
+              </div>
+            </div>
+
+            <div className="card p-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => setActiveTab('gigs')}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600">
+                  <Briefcase size={24} />
+                </div>
+                <span className="font-bold text-center text-stone-900">Gig Management</span>
+              </div>
+            </div>
+
+            <div className="card p-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => setActiveTab('moderation')}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
+                  <AlertTriangle size={24} />
+                </div>
+                <span className="font-bold text-center text-stone-900">Dispute Resolution</span>
+              </div>
+            </div>
+
+            <div className="card p-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => setActiveTab('support')}>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-red-600">
+                  <HelpCircle size={24} />
+                </div>
+                <span className="font-bold text-center text-stone-900">Support Hub</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
 
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MOCK_GIGS } from '../constants';
 import { MarketRatesCard } from '../components/MarketRatesCard';
 import { Gig, ClientDashboard as ClientDashboardType, TaskStatus } from '../types';
+import { Button } from '../components/ui/Button';
 import {
   MapPin,
   Clock,
@@ -16,6 +17,7 @@ import {
   DollarSign,
   Star,
   TrendingUp,
+  TrendingDown,
   Plus,
   Settings,
   MessageSquare,
@@ -37,7 +39,8 @@ import {
   Share,
   X,
   Flag,
-  ShieldAlert
+  ShieldAlert,
+  BookOpen
 } from 'lucide-react';
 
 // Generate user-specific mock data for clients
@@ -388,27 +391,30 @@ export const ClientDashboard: React.FC = () => {
   const [reportTask, setReportTask] = useState<Gig | null>(null);
   const [reportCategory, setReportCategory] = useState('');
   const [reportDescription, setReportDescription] = useState('');
-  const [activeTab, setActiveTab] = useState<'available' | 'active' | 'timeline' | 'earnings' | 'help'>('available');
+  const [activeTab, setActiveTab] = useState<'discover' | 'active' | 'favorites' | 'history' | 'payments' | 'help'>('discover');
   const [askPlaceQuery, setAskPlaceQuery] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const [askResponse, setAskResponse] = useState<string | null>(null);
   const [sharedLocations, setSharedLocations] = useState<string[]>([]);
   const [showGreeting, setShowGreeting] = useState(() => {
-    return !sessionStorage.getItem('welcome_shown_after_login');
+    // Only show greeting immediately after login
+    const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
+    if (justLoggedIn) {
+      sessionStorage.removeItem('just_logged_in');
+      return true;
+    }
+    return false;
   });
 
   const dismissGreeting = () => {
     setShowGreeting(false);
-    sessionStorage.setItem('welcome_shown_after_login', 'true');
   };
 
-  // Auto-dismiss greeting after 4 seconds
   useEffect(() => {
     if (showGreeting) {
       const timer = setTimeout(() => {
         dismissGreeting();
-      }, 4000); // 4 seconds
-
+      }, 4000); // Show for exactly 4 seconds
       return () => clearTimeout(timer);
     }
   }, [showGreeting]);
@@ -720,25 +726,29 @@ export const ClientDashboard: React.FC = () => {
         </div>
       </div >
 
-      {/* Tabs */}
-      < div className="glass-card rounded-2xl overflow-hidden" >
-        <div className="flex border-b border-slate-100/50">
+      {/* Enhanced Client Dashboard Tabs */}
+      <div className="glass-card rounded-2xl overflow-hidden">
+        <div className="flex border-b border-slate-100/50 overflow-x-auto">
           {[
-            { key: 'available', label: 'Available Tasks' },
-            { key: 'active', label: 'Active Tasks' },
-            { key: 'timeline', label: 'Timeline' },
-            { key: 'earnings', label: 'Earnings' },
-            { key: 'help', label: 'Support' }
+            { key: 'discover', label: 'Discover', icon: '🔍' },
+            { key: 'active', label: 'My Tasks', icon: '📋' },
+            { key: 'favorites', label: 'Favorites', icon: '❤️' },
+            { key: 'history', label: 'History', icon: '📚' },
+            { key: 'payments', label: 'Payments', icon: '💳' },
+            { key: 'help', label: 'Support', icon: '🆘' }
           ].map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
-              className={`flex-1 px-6 py-4 text-sm font-black uppercase tracking-widest transition-all relative ${activeTab === tab.key
-                ? 'text-brand-600'
-                : 'text-slate-400 hover:text-slate-600'
-                }`}
+              className={`flex-1 min-w-[100px] px-4 py-4 text-xs font-black uppercase tracking-widest transition-all relative flex flex-col items-center gap-1 ${
+                activeTab === tab.key
+                  ? 'text-brand-600'
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
             >
-              {tab.label}
+              <span className="text-sm">{tab.icon}</span>
+              <span className="hidden sm:block">{tab.label}</span>
+              <span className="sm:hidden text-[10px]">{tab.label.split(' ')[0]}</span>
               {activeTab === tab.key && (
                 <motion.div
                   layoutId="activeTab"
@@ -749,8 +759,137 @@ export const ClientDashboard: React.FC = () => {
           ))}
         </div>
 
-        <div className="p-6 min-h-[400px]">
-          {activeTab === 'available' && (
+        <div className="p-6 min-h-[500px]">
+          {activeTab === 'discover' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Quick Actions */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <button
+                  onClick={() => navigate('/gigs', { state: { openPostModal: true, category: 'shopping' } })}
+                  className="glass-card p-4 rounded-2xl hover:shadow-md transition-all text-center"
+                >
+                  <div className="text-2xl mb-2">🛒</div>
+                  <div className="text-xs font-bold text-slate-900">Shopping</div>
+                </button>
+                <button
+                  onClick={() => navigate('/gigs', { state: { openPostModal: true, category: 'prescription' } })}
+                  className="glass-card p-4 rounded-2xl hover:shadow-md transition-all text-center"
+                >
+                  <div className="text-2xl mb-2">💊</div>
+                  <div className="text-xs font-bold text-slate-900">Pharmacy</div>
+                </button>
+                <button
+                  onClick={() => navigate('/gigs', { state: { openPostModal: true, category: 'delivery' } })}
+                  className="glass-card p-4 rounded-2xl hover:shadow-md transition-all text-center"
+                >
+                  <div className="text-2xl mb-2">📦</div>
+                  <div className="text-xs font-bold text-slate-900">Delivery</div>
+                </button>
+                <button
+                  onClick={() => navigate('/gigs', { state: { openPostModal: true, category: 'urgent' } })}
+                  className="glass-card p-4 rounded-2xl hover:shadow-md transition-all text-center"
+                >
+                  <div className="text-2xl mb-2">🚨</div>
+                  <div className="text-xs font-bold text-slate-900">Urgent</div>
+                </button>
+              </div>
+
+              {/* Popular Categories */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <TrendingUp size={20} className="text-blue-600" />
+                  Popular Categories
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {[
+                    { name: 'Grocery Shopping', icon: '🛒', tasks: 45, color: 'bg-green-50 text-green-700' },
+                    { name: 'Pharmacy Runs', icon: '💊', tasks: 32, color: 'bg-blue-50 text-blue-700' },
+                    { name: 'Food Delivery', icon: '🍕', tasks: 28, color: 'bg-red-50 text-red-700' },
+                    { name: 'Document Pickup', icon: '📄', tasks: 19, color: 'bg-purple-50 text-purple-700' },
+                    { name: 'Banking', icon: '🏦', tasks: 15, color: 'bg-amber-50 text-amber-700' },
+                    { name: 'Dry Cleaning', icon: '👔', tasks: 12, color: 'bg-slate-50 text-slate-700' }
+                  ].map((category, index) => (
+                    <div key={index} className="glass-card p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer group">
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">{category.icon}</div>
+                        <div className="text-sm font-bold text-slate-900 mb-1 group-hover:text-brand-600 transition-colors">
+                          {category.name}
+                        </div>
+                        <div className="text-xs text-slate-500">{category.tasks} active tasks</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Task Templates */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Bookmark size={20} className="text-purple-600" />
+                    Quick Templates
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">View All</button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {MOCK_CLIENT_DASHBOARD.templates.slice(0, 4).map(temp => (
+                    <div key={temp.id} className="glass-card p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer group">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-slate-900 group-hover:text-brand-600 transition-colors">{temp.name}</h4>
+                        <div className="bg-brand-100 text-brand-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
+                          {temp.type}
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-500 line-clamp-2 mb-3">{temp.description}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400">From ${temp.estimatedPrice}</span>
+                        <span className="text-xs font-bold text-green-600">{temp.usageCount} used</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Messenger Spotlight */}
+              <div className="glass-card p-6 rounded-3xl">
+                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Star size={20} className="text-amber-600" />
+                  Top Rated Messengers
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { name: 'Tendai M.', rating: 4.9, tasks: 127, specialties: ['Pharmacy', 'Shopping'], avatar: '👨‍💼' },
+                    { name: 'Grace K.', rating: 4.8, tasks: 89, specialties: ['Food', 'Documents'], avatar: '👩‍💼' },
+                    { name: 'Michael R.', rating: 4.9, tasks: 156, specialties: ['Urgent', 'Banking'], avatar: '👨‍💼' }
+                  ].map((messenger, index) => (
+                    <div key={index} className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl hover:bg-white transition-colors cursor-pointer">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">
+                        {messenger.avatar}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-slate-900">{messenger.name}</span>
+                          <div className="flex items-center gap-1">
+                            <Star size={14} className="text-amber-500 fill-current" />
+                            <span className="text-sm font-bold text-slate-900">{messenger.rating}</span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-slate-500">{messenger.tasks} tasks • {messenger.specialties.join(', ')}</div>
+                      </div>
+                      <button className="text-brand-600 font-bold text-sm">Favorite</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'active' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -759,19 +898,22 @@ export const ClientDashboard: React.FC = () => {
             >
               {/* Active Tasks */}
               <div className="space-y-4">
-                <h3 className="font-display font-semibold text-slate-800 text-lg">Active & Upcoming Tasks</h3>
+                <h3 className="font-display font-semibold text-slate-800 text-lg flex items-center gap-2">
+                  <Clock size={20} className="text-blue-600" />
+                  My Active Tasks ({dashboard.activeTasks.length})
+                </h3>
                 {dashboard.activeTasks.length > 0 ? (
                   dashboard.activeTasks.map(task => (
                     <TaskCard key={task.id} task={task} onAction={handleTaskAction} sharedLocations={sharedLocations} />
                   ))
                 ) : (
-                  <div className="text-center py-12">
-                    <Clock className="mx-auto text-slate-300" size={48} />
-                    <h3 className="text-lg font-medium text-slate-600 mt-4">No active tasks</h3>
-                    <p className="text-slate-500 mt-2">Post a new task to get started.</p>
+                  <div className="text-center py-12 glass-card rounded-3xl">
+                    <Clock className="mx-auto text-slate-300 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-slate-600 mb-2">No active tasks</h3>
+                    <p className="text-slate-500 mb-4">Your errands will appear here when messengers accept them.</p>
                     <button
                       onClick={() => navigate('/gigs', { state: { openPostModal: true } })}
-                      className="mt-4 bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition-colors"
+                      className="bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition-colors"
                     >
                       Post New Task
                     </button>
@@ -779,12 +921,15 @@ export const ClientDashboard: React.FC = () => {
                 )}
               </div>
 
-              {/* Recurring Tasks - Simplified for implementation speed, retaining logic */}
+              {/* Recurring Tasks */}
               {dashboard.recurringTasks.length > 0 && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-slate-800">Recurring Tasks</h3>
+                  <h3 className="font-display font-semibold text-slate-800 text-lg flex items-center gap-2">
+                    <RotateCcw size={20} className="text-green-600" />
+                    Recurring Tasks
+                  </h3>
                   {dashboard.recurringTasks.map(recurring => (
-                    <div key={recurring.id} className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                    <div key={recurring.id} className="glass-card p-4 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-slate-800">Weekly Pharmacy Run</h4>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${recurring.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
@@ -792,6 +937,7 @@ export const ClientDashboard: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-sm text-slate-600 mb-2">Every Monday, Wednesday, Friday at 9:00 AM</p>
+                      <div className="text-xs text-slate-500">Next: {recurring.schedule.nextRun}</div>
                     </div>
                   ))}
                 </div>
@@ -799,122 +945,767 @@ export const ClientDashboard: React.FC = () => {
             </motion.div>
           )}
 
-          {/* Other tabs placeholders or simplified implementations */}
-          {activeTab === 'active' && (
-            <div className="space-y-4">
-              <h3 className="font-display font-semibold text-slate-800 text-lg">Completed Tasks</h3>
-              {dashboard.completedTasks.length > 0 ? (
-                dashboard.completedTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onAction={handleTaskAction} sharedLocations={sharedLocations} />
-                ))
-              ) : (
-                <p className="text-slate-500">No history available yet.</p>
-              )}
-            </div>
-          )}
-          {activeTab === 'timeline' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-display font-semibold text-slate-800 text-lg">My Templates</h3>
-                <button className="text-brand-600 font-bold text-sm">+ New Template</button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MOCK_CLIENT_DASHBOARD.templates.map(temp => (
-                  <div key={temp.id} className="p-4 bg-slate-50/50 rounded-xl border border-slate-200/60 hover:border-brand-300 transition-colors cursor-pointer group">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold text-slate-800 group-hover:text-brand-700">{temp.name}</h4>
-                      <div className="bg-brand-100 text-brand-700 text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider">{temp.type}</div>
-                    </div>
-                    <p className="text-sm text-slate-500 line-clamp-2">{temp.description}</p>
-                    <div className="mt-4 pt-4 border-t border-slate-200/60 flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-400">Regularly ${temp.estimatedPrice}</span>
-                      <button className="text-brand-600 text-xs font-black uppercase tracking-widest hover:underline">Use Template</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {activeTab === 'earnings' && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="font-display font-semibold text-slate-800 text-lg">Saved Locations</h3>
-                <button className="text-brand-600 font-bold text-sm">+ Add Address</button>
-              </div>
-              <div className="grid gap-4">
-                {MOCK_CLIENT_DASHBOARD.savedAddresses.map(addr => (
-                  <div key={addr.id} className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
-                      {addr.name.toLowerCase().includes('home') ? '🏠' : addr.name.toLowerCase().includes('work') ? '🏢' : '📍'}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-slate-800">{addr.name}</h4>
-                      <p className="text-sm text-slate-500">{addr.address}</p>
-                    </div>
-                    <button className="text-slate-400 hover:text-brand-600 p-2">
-                      <Settings size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'help' && (
-            <div className="p-8">
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Help & Support</h3>
-                  <p className="text-sm text-slate-500 font-medium">Track your tickets and report platform issues.</p>
-                </div>
-                <button
-                  onClick={() => setShowReportModal(true)}
-                  className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all"
-                >
-                  New Support Ticket
-                </button>
-              </div>
-
+          {activeTab === 'favorites' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Favorite Messengers */}
               <div className="space-y-4">
-                {supportTickets.filter(t => t.sender?.id === user.id).length > 0 ? (
-                  supportTickets.filter(t => t.sender?.id === user.id).map(ticket => (
-                    <div key={ticket.id} className="p-6 bg-slate-50 border border-slate-200 rounded-[2rem] flex items-center justify-between hover:bg-white transition-all shadow-sm">
-                      <div className="flex items-center gap-5">
-                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-xl shadow-sm border border-slate-100">
-                          {ticket.category === 'payment' ? '💰' : ticket.category === 'late_delivery' ? '⏰' : ticket.category === 'safety' ? '🛡️' : '💬'}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <User size={20} className="text-red-600" />
+                    Favorite Messengers
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">Browse All</button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    { name: 'Tendai M.', rating: 4.9, tasks: 127, responseTime: '2 min', specialties: ['Pharmacy', 'Shopping'], avatar: '👨‍💼', isFavorite: true },
+                    { name: 'Grace K.', rating: 4.8, tasks: 89, responseTime: '5 min', specialties: ['Food', 'Documents'], avatar: '👩‍💼', isFavorite: true },
+                    { name: 'Michael R.', rating: 4.9, tasks: 156, responseTime: '1 min', specialties: ['Urgent', 'Banking'], avatar: '👨‍💼', isFavorite: true }
+                  ].map((messenger, index) => (
+                    <div key={index} className="glass-card p-4 rounded-2xl">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">
+                          {messenger.avatar}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-black text-slate-900">{ticket.subject}</span>
-                            <span className="text-[10px] font-black text-slate-400">#{ticket.id}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-slate-900">{messenger.name}</span>
+                            <button className={`text-sm ${messenger.isFavorite ? 'text-red-500' : 'text-slate-400'}`}>
+                              ❤️
+                            </button>
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${ticket.status === 'open' ? 'bg-amber-100 text-amber-700' :
-                              ticket.status === 'investigating' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                              }`}>
-                              {ticket.status}
-                            </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">• {new Date(ticket.timestamp).toLocaleDateString()}</span>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 mb-2">
+                            <div className="flex items-center gap-1">
+                              <Star size={12} className="text-amber-500 fill-current" />
+                              <span>{messenger.rating}</span>
+                            </div>
+                            <span>•</span>
+                            <span>{messenger.tasks} tasks</span>
+                            <span>•</span>
+                            <span>{messenger.responseTime} response</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {messenger.specialties.map((specialty, idx) => (
+                              <span key={idx} className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full">
+                                {specialty}
+                              </span>
+                            ))}
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Assigned Support</p>
-                        <p className="text-xs font-bold text-slate-600">Atumwa Trust & Safety</p>
+                      <button className="w-full bg-brand-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-brand-700 transition-colors">
+                        Request This Messenger
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Favorite Locations */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <MapPin size={20} className="text-blue-600" />
+                    Favorite Locations
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">+ Add Location</button>
+                </div>
+                <div className="grid gap-4">
+                  {MOCK_CLIENT_DASHBOARD.savedAddresses.map(addr => (
+                    <div key={addr.id} className="flex items-center gap-4 p-4 glass-card rounded-xl">
+                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                        {addr.name.toLowerCase().includes('home') ? '🏠' : addr.name.toLowerCase().includes('work') ? '🏢' : '📍'}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-slate-800">{addr.name}</h4>
+                        <p className="text-sm text-slate-500">{addr.address}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {addr.isDefault ? 'Default' : 'Saved'}
+                        </span>
+                        <button className="text-slate-400 hover:text-slate-600 p-1">
+                          <Settings size={16} />
+                        </button>
                       </div>
                     </div>
-                  ))
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'history' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Task History */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <History size={20} className="text-purple-600" />
+                    Task History
+                  </h3>
+                  <div className="flex gap-2">
+                    <select className="px-3 py-1 bg-slate-100 rounded-lg text-sm">
+                      <option>All Tasks</option>
+                      <option>This Week</option>
+                      <option>This Month</option>
+                      <option>This Year</option>
+                    </select>
+                  </div>
+                </div>
+
+                {dashboard.completedTasks.length > 0 ? (
+                  <div className="space-y-3">
+                    {dashboard.completedTasks.map(task => (
+                      <div key={task.id} className="glass-card p-4 rounded-xl hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-slate-800">{task.title}</h4>
+                              <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">Completed</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <MapPin size={14} />
+                              <span>{task.distance}</span>
+                              <span>•</span>
+                              <span>${task.price.toFixed(2)}</span>
+                              <span>•</span>
+                              <span>{new Date().toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => onAction('reorder', task.id)}
+                              className="bg-brand-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors"
+                            >
+                              Reorder
+                            </button>
+                            <button
+                              onClick={() => onAction('rate', task.id)}
+                              className="bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
+                            >
+                              Rate
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <div className="text-center py-16 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
-                    <HelpCircle size={48} className="mx-auto text-slate-200 mb-4" />
-                    <p className="text-slate-500 font-medium">No active support tickets. We're here if you need us!</p>
+                  <div className="text-center py-12 glass-card rounded-3xl">
+                    <History className="mx-auto text-slate-300 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-slate-600 mb-2">No task history yet</h3>
+                    <p className="text-slate-500">Your completed tasks will appear here.</p>
                   </div>
                 )}
               </div>
-            </div>
+                    <TaskCard key={task.id} task={task} onAction={handleTaskAction} sharedLocations={sharedLocations} />
+                  ))
+                ) : (
+                  <div className="text-center py-12 glass-card rounded-3xl">
+                    <Clock className="mx-auto text-slate-300 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-slate-600 mb-2">No active tasks</h3>
+                    <p className="text-slate-500 mb-4">Your errands will appear here when messengers accept them.</p>
+                    <button
+                      onClick={() => navigate('/gigs', { state: { openPostModal: true } })}
+                      className="bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition-colors"
+                    >
+                      Post New Task
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Recurring Tasks */}
+              {dashboard.recurringTasks.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-display font-semibold text-slate-800 text-lg flex items-center gap-2">
+                    <RotateCcw size={20} className="text-green-600" />
+                    Recurring Tasks
+                  </h3>
+                  {dashboard.recurringTasks.map(recurring => (
+                    <div key={recurring.id} className="glass-card p-4 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-slate-800">Weekly Pharmacy Run</h4>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${recurring.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {recurring.isActive ? 'Active' : 'Paused'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600 mb-2">Every Monday, Wednesday, Friday at 9:00 AM</p>
+                      <div className="text-xs text-slate-500">Next: {recurring.schedule.nextRun}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'favorites' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Favorite Messengers */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <User size={20} className="text-red-600" />
+                    Favorite Messengers
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">Browse All</button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    { name: 'Tendai M.', rating: 4.9, tasks: 127, responseTime: '2 min', specialties: ['Pharmacy', 'Shopping'], avatar: '👨‍💼', isFavorite: true },
+                    { name: 'Grace K.', rating: 4.8, tasks: 89, responseTime: '5 min', specialties: ['Food', 'Documents'], avatar: '👩‍💼', isFavorite: true },
+                    { name: 'Michael R.', rating: 4.9, tasks: 156, responseTime: '1 min', specialties: ['Urgent', 'Banking'], avatar: '👨‍💼', isFavorite: true }
+                  ].map((messenger, index) => (
+                    <div key={index} className="glass-card p-4 rounded-2xl">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">
+                          {messenger.avatar}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-slate-900">{messenger.name}</span>
+                            <button className={`text-sm ${messenger.isFavorite ? 'text-red-500' : 'text-slate-400'}`}>
+                              ❤️
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 mb-2">
+                            <div className="flex items-center gap-1">
+                              <Star size={12} className="text-amber-500 fill-current" />
+                              <span>{messenger.rating}</span>
+                            </div>
+                            <span>•</span>
+                            <span>{messenger.tasks} tasks</span>
+                            <span>•</span>
+                            <span>{messenger.responseTime} response</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {messenger.specialties.map((specialty, idx) => (
+                              <span key={idx} className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full">
+                                {specialty}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <button className="w-full bg-brand-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-brand-700 transition-colors">
+                        Request This Messenger
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Favorite Locations */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <MapPin size={20} className="text-blue-600" />
+                    Favorite Locations
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">+ Add Location</button>
+                </div>
+                <div className="grid gap-4">
+                  {MOCK_CLIENT_DASHBOARD.savedAddresses.map(addr => (
+                    <div key={addr.id} className="flex items-center gap-4 p-4 glass-card rounded-xl">
+                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                        {addr.name.toLowerCase().includes('home') ? '🏠' : addr.name.toLowerCase().includes('work') ? '🏢' : '📍'}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-slate-800">{addr.name}</h4>
+                        <p className="text-sm text-slate-500">{addr.address}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {addr.isDefault ? 'Default' : 'Saved'}
+                        </span>
+                        <button className="text-slate-400 hover:text-slate-600 p-1">
+                          <Settings size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'history' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Task History */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <History size={20} className="text-purple-600" />
+                    Task History
+                  </h3>
+                  <div className="flex gap-2">
+                    <select className="px-3 py-1 bg-slate-100 rounded-lg text-sm">
+                      <option>All Tasks</option>
+                      <option>This Week</option>
+                      <option>This Month</option>
+                      <option>This Year</option>
+                    </select>
+                  </div>
+                </div>
+
+                {dashboard.completedTasks.length > 0 ? (
+                  <div className="space-y-3">
+                    {dashboard.completedTasks.map(task => (
+                      <div key={task.id} className="glass-card p-4 rounded-xl hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-slate-800">{task.title}</h4>
+                              <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">Completed</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <MapPin size={14} />
+                              <span>{task.distance}</span>
+                              <span>•</span>
+                              <span>${task.price.toFixed(2)}</span>
+                              <span>•</span>
+                              <span>{new Date().toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleTaskAction('reorder', task.id)}
+                              className="bg-brand-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors"
+                            >
+                              Reorder
+                            </button>
+                            <button
+                              onClick={() => handleTaskAction('rate', task.id)}
+                              className="bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
+                            >
+                              Rate
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 glass-card rounded-3xl">
+                    <History className="mx-auto text-slate-300 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-slate-600 mb-2">No task history yet</h3>
+                    <p className="text-slate-500">Your completed tasks will appear here.</p>
+                  </div>
+                )}
+              </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 glass-card rounded-3xl">
+                    <Clock className="mx-auto text-slate-300 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-slate-600 mb-2">No active tasks</h3>
+                    <p className="text-slate-500 mb-4">Your errands will appear here when messengers accept them.</p>
+                    <button
+                      onClick={() => navigate('/gigs', { state: { openPostModal: true } })}
+                      className="bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition-colors"
+                    >
+                      Post New Task
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Recurring Tasks */}
+              {dashboard.recurringTasks.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="font-display font-semibold text-slate-800 text-lg flex items-center gap-2">
+                    <RotateCcw size={20} className="text-green-600" />
+                    Recurring Tasks
+                  </h3>
+                  {dashboard.recurringTasks.map(recurring => (
+                    <div key={recurring.id} className="glass-card p-4 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-slate-800">Weekly Pharmacy Run</h4>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${recurring.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {recurring.isActive ? 'Active' : 'Paused'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600 mb-2">Every Monday, Wednesday, Friday at 9:00 AM</p>
+                      <div className="text-xs text-slate-500">Next: {recurring.schedule.nextRun}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {activeTab === 'favorites' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Favorite Messengers */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <User size={20} className="text-red-600" />
+                    Favorite Messengers
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">Browse All</button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    { name: 'Tendai M.', rating: 4.9, tasks: 127, responseTime: '2 min', specialties: ['Pharmacy', 'Shopping'], avatar: '👨‍💼', isFavorite: true },
+                    { name: 'Grace K.', rating: 4.8, tasks: 89, responseTime: '5 min', specialties: ['Food', 'Documents'], avatar: '👩‍💼', isFavorite: true },
+                    { name: 'Michael R.', rating: 4.9, tasks: 156, responseTime: '1 min', specialties: ['Urgent', 'Banking'], avatar: '👨‍💼', isFavorite: true }
+                  ].map((messenger, index) => (
+                    <div key={index} className="glass-card p-4 rounded-2xl">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">
+                          {messenger.avatar}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-slate-900">{messenger.name}</span>
+                            <button className={`text-sm ${messenger.isFavorite ? 'text-red-500' : 'text-slate-400'}`}>
+                              ❤️
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 mb-2">
+                            <div className="flex items-center gap-1">
+                              <Star size={12} className="text-amber-500 fill-current" />
+                              <span>{messenger.rating}</span>
+                            </div>
+                            <span>•</span>
+                            <span>{messenger.tasks} tasks</span>
+                            <span>•</span>
+                            <span>{messenger.responseTime} response</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {messenger.specialties.map((specialty, idx) => (
+                              <span key={idx} className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full">
+                                {specialty}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <button className="w-full bg-brand-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-brand-700 transition-colors">
+                        Request This Messenger
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Favorite Locations */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <MapPin size={20} className="text-blue-600" />
+                    Favorite Locations
+                  </h3>
+                  <button className="text-brand-600 font-bold text-sm">+ Add Location</button>
+                </div>
+                <div className="grid gap-4">
+                  {MOCK_CLIENT_DASHBOARD.savedAddresses.map(addr => (
+                    <div key={addr.id} className="flex items-center gap-4 p-4 glass-card rounded-xl">
+                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
+                        {addr.name.toLowerCase().includes('home') ? '🏠' : addr.name.toLowerCase().includes('work') ? '🏢' : '📍'}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-slate-800">{addr.name}</h4>
+                        <p className="text-sm text-slate-500">{addr.address}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {addr.isDefault ? 'Default' : 'Saved'}
+                        </span>
+                        <button className="text-slate-400 hover:text-slate-600 p-1">
+                          <Settings size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'history' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Task History */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <History size={20} className="text-purple-600" />
+                    Task History
+                  </h3>
+                  <div className="flex gap-2">
+                    <select className="px-3 py-1 bg-slate-100 rounded-lg text-sm">
+                      <option>All Tasks</option>
+                      <option>This Week</option>
+                      <option>This Month</option>
+                      <option>This Year</option>
+                    </select>
+                  </div>
+                </div>
+
+                {dashboard.completedTasks.length > 0 ? (
+                  <div className="space-y-3">
+                    {dashboard.completedTasks.map(task => (
+                      <div key={task.id} className="glass-card p-4 rounded-xl hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-slate-800">{task.title}</h4>
+                              <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">Completed</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <MapPin size={14} />
+                              <span>{task.distance}</span>
+                              <span>•</span>
+                              <span>${task.price.toFixed(2)}</span>
+                              <span>•</span>
+                              <span>{new Date().toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => onAction('reorder', task.id)}
+                              className="bg-brand-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors"
+                            >
+                              Reorder
+                            </button>
+                            <button
+                              onClick={() => onAction('rate', task.id)}
+                              className="bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
+                            >
+                              Rate
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 glass-card rounded-3xl">
+                    <History className="mx-auto text-slate-300 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-slate-600 mb-2">No task history yet</h3>
+                    <p className="text-slate-500">Your completed tasks will appear here.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Spending Analytics */}
+              <div className="glass-card p-6 rounded-3xl">
+                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <BarChart3 size={20} className="text-blue-600" />
+                  Spending Summary
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-green-600 mb-2">${dashboard.totalSpent.toFixed(2)}</div>
+                    <div className="text-sm text-slate-600">Total Spent</div>
+                    <div className="text-xs text-green-600 font-medium mt-1">+12% from last month</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-blue-600 mb-2">${(dashboard.totalSpent / dashboard.completedTasksCount || 1).toFixed(2)}</div>
+                    <div className="text-sm text-slate-600">Avg per Task</div>
+                    <div className="text-xs text-blue-600 font-medium mt-1">Most efficient</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-purple-600 mb-2">{dashboard.completedTasksCount}</div>
+                    <div className="text-sm text-slate-600">Tasks Completed</div>
+                    <div className="text-xs text-purple-600 font-medium mt-1">Great job!</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'payments' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Payment Methods */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <CreditCard size={20} className="text-green-600" />
+                    Payment Methods
+                  </h3>
+                  <button className="bg-brand-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-700 transition-colors">
+                    + Add Card
+                  </button>
+                </div>
+                <div className="grid gap-4">
+                  {[
+                    { type: 'Visa', last4: '4242', expiry: '12/26', isDefault: true },
+                    { type: 'Mastercard', last4: '8888', expiry: '08/27', isDefault: false },
+                    { type: 'EcoCash', last4: '1234', expiry: null, isDefault: false }
+                  ].map((card, index) => (
+                    <div key={index} className="flex items-center gap-4 p-4 glass-card rounded-xl">
+                      <div className="w-12 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded flex items-center justify-center text-white text-xs font-bold">
+                        {card.type === 'EcoCash' ? '📱' : card.type[0]}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900">•••• •••• •••• {card.last4}</span>
+                          {card.isDefault && <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">Default</span>}
+                        </div>
+                        {card.expiry && <div className="text-sm text-slate-500">Expires {card.expiry}</div>}
+                      </div>
+                      <button className="text-slate-400 hover:text-slate-600 p-2">
+                        <Settings size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Transactions */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Wallet size={20} className="text-blue-600" />
+                  Recent Transactions
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { description: 'Pharmacy pickup - Aspirin', amount: -15.50, date: '2 hours ago', status: 'completed' },
+                    { description: 'Grocery delivery - Food Lovers', amount: -45.80, date: '1 day ago', status: 'completed' },
+                    { description: 'Urgent document pickup', amount: -25.00, date: '2 days ago', status: 'completed' },
+                    { description: 'Wallet top-up', amount: 50.00, date: '3 days ago', status: 'completed' }
+                  ].map((transaction, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 glass-card rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${transaction.amount > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                          {transaction.amount > 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900">{transaction.description}</div>
+                          <div className="text-sm text-slate-500">{transaction.date}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-lg font-bold ${transaction.amount > 0 ? 'text-green-600' : 'text-slate-900'}`}>
+                          {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                        </div>
+                        <div className={`text-xs capitalize px-2 py-1 rounded-full ${transaction.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {transaction.status}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'help' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Help Categories */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="glass-card p-6 rounded-3xl">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <HelpCircle size={20} className="text-blue-600" />
+                    Quick Help
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      'How to post a task',
+                      'Payment and billing',
+                      'Finding the right messenger',
+                      'Tracking your delivery',
+                      'Rating and reviews',
+                      'Cancelling a task'
+                    ].map((help, index) => (
+                      <button key={index} className="w-full text-left p-3 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors">
+                        <div className="font-medium text-slate-900">{help}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="glass-card p-6 rounded-3xl">
+                  <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <MessageSquare size={20} className="text-green-600" />
+                    Contact Support
+                  </h3>
+                  <div className="space-y-4">
+                    <button className="w-full p-4 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl font-medium transition-colors text-left">
+                      📞 Call Support (24/7)
+                    </button>
+                    <button className="w-full p-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-medium transition-colors text-left">
+                      💬 Live Chat
+                    </button>
+                    <button className="w-full p-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl font-medium transition-colors text-left">
+                      📧 Email Support
+                    </button>
+                    <button
+                      onClick={() => setShowReportModal(true)}
+                      className="w-full p-4 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl font-medium transition-colors text-left"
+                    >
+                      🚨 Report Issue
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ Section */}
+              <div className="glass-card p-6 rounded-3xl">
+                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <BookOpen size={20} className="text-purple-600" />
+                  Frequently Asked Questions
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { q: 'How quickly can I expect a messenger?', a: 'Most tasks are accepted within 5-10 minutes during peak hours.' },
+                    { q: 'What if my messenger is late?', a: 'Contact support immediately and we\'ll help resolve the issue.' },
+                    { q: 'Can I change my task details after posting?', a: 'Yes, you can edit tasks before a messenger accepts them.' },
+                    { q: 'How are payments processed?', a: 'Payments are held securely until task completion, then released to the messenger.' }
+                  ].map((faq, index) => (
+                    <div key={index} className="border-b border-slate-100 pb-4 last:border-b-0">
+                      <div className="font-bold text-slate-900 mb-2">{faq.q}</div>
+                      <div className="text-sm text-slate-600">{faq.a}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
           )}
         </div>
-      </div >
+      </div>
 
       {/* Enhanced Full-Screen Report Modal */}
       <AnimatePresence>
@@ -1105,7 +1896,7 @@ export const ClientDashboard: React.FC = () => {
                           setIsAsking(true);
                           // Simulate AI/Messenger delay
                           broadcastInquiry({
-                            user: user,
+                            user: user!,
                             query: askPlaceQuery,
                             place: "Downtown Pharmacy (nearby)",
                             price: exchangeRates.usd_to_zig * 0.5 // Cost simulation
