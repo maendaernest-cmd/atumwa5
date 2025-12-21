@@ -20,6 +20,8 @@ const Profile = lazy(() => import('./pages/Profile').then(module => ({ default: 
 const Landing = lazy(() => import('./pages/Landing').then(module => ({ default: module.Landing })));
 const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
 const SignUp = lazy(() => import('./pages/SignUp').then(module => ({ default: module.SignUp })));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail').then(module => ({ default: module.VerifyEmail })));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const MessengerDashboard = lazy(() => import('./pages/MessengerDashboard').then(module => ({ default: module.MessengerDashboard })));
 const ClientDashboard = lazy(() => import('./pages/ClientDashboard').then(module => ({ default: module.ClientDashboard })));
@@ -205,6 +207,8 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

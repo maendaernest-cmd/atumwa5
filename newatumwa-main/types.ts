@@ -3,6 +3,7 @@ export type UserRole = 'client' | 'atumwa' | 'admin';
 export interface User {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
   avatar: string;
   rating: number;
@@ -16,6 +17,42 @@ export interface User {
     lat: number;
     lng: number;
   };
+  // Authentication fields
+  passwordHash?: string;
+  emailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationTokenExpiry?: string;
+  passwordResetToken?: string;
+  passwordResetTokenExpiry?: string;
+  lastLoginAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Account security
+  failedLoginAttempts: number;
+  lockedUntil?: string;
+  // 2FA (optional)
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
+}
+
+export interface AuthCredentials {
+  email: string;
+  password: string;
+}
+
+export interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: UserRole;
+  agreeToTerms: boolean;
+}
+
+export interface AuthError {
+  code: string;
+  message: string;
+  field?: string;
 }
 
 export type GigType = 'prescription' | 'paperwork' | 'parcel' | 'shopping';

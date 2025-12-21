@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Twitter, Chrome, Gamepad2, ArrowRight, Clock, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Twitter, Chrome, ArrowRight, Clock, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { AuthCredentials } from '../types';
 
 export const Login: React.FC = () => {
-  const { user, login } = useAuth();
+  const { user, login, loading, error } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AuthCredentials>({
     email: '',
     password: ''
   });
@@ -19,36 +20,23 @@ export const Login: React.FC = () => {
     });
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Determine info based on email (Simulation)
-    let role: 'client' | 'atumwa' | 'admin' = 'client';
-    let isPending = false;
-
-    if (formData.email === 'client@atumwa.com') {
-      role = 'client';
-    } else if (formData.email === 'runner@atumwa.com') {
-      role = 'atumwa';
-    } else if (formData.email === 'pending@atumwa.com') {
-      role = 'atumwa';
-      isPending = true;
-    } else if (formData.email === 'admin@atumwa.com') {
-      role = 'admin';
-    }
-
-    login(role, isPending);
+    await login(formData);
   };
 
   // Redirection Logic
   useEffect(() => {
-    if (user) {
+    if (user && !loading) {
       if (user.role === 'admin') {
         navigate('/admin');
+      } else if (user.role === 'atumwa' && !user.isVerified) {
+        // Show pending approval message (stays on login page)
       } else if ((user.role === 'atumwa' && user.isVerified) || user.role === 'client') {
         navigate('/dashboard');
       }
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   // If user is logged in as an unverified messenger, show pending UI
   if (user && user.role === 'atumwa' && !user.isVerified) {
@@ -119,6 +107,19 @@ export const Login: React.FC = () => {
           </h1>
           <p className="text-stone-500 mb-8 font-medium">Continue your journey with the family.</p>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-red-900">{error.message}</p>
+                {error.code === 'ACCOUNT_LOCKED' && (
+                  <p className="text-xs text-red-700 mt-1">Too many login attempts. Please try again later.</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
@@ -129,7 +130,8 @@ export const Login: React.FC = () => {
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                disabled={loading}
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium disabled:opacity-50"
                 required
               />
             </div>
@@ -137,7 +139,7 @@ export const Login: React.FC = () => {
             <div className="space-y-1 relative">
               <div className="flex justify-between items-center pr-1">
                 <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Password</label>
-                <button type="button" className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:text-brand-700">Forgot?</button>
+                <Link to="/forgot-password" className="text-[10px] font-black text-brand-600 uppercase tracking-widest hover:text-brand-700">Forgot?</Link>
               </div>
               <input
                 type={showPassword ? "text" : "password"}
@@ -145,13 +147,15 @@ export const Login: React.FC = () => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14"
+                disabled={loading}
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14 disabled:opacity-50"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-[42px] text-stone-400 hover:text-stone-600 transition-colors"
+                disabled={loading}
+                className="absolute right-5 top-[42px] text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -159,10 +163,20 @@ export const Login: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-stone-900 hover:bg-stone-800 text-white py-5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 group shadow-xl shadow-stone-200 active:scale-[0.98]"
+              disabled={loading}
+              className="w-full bg-stone-900 hover:bg-stone-800 disabled:bg-stone-400 text-white py-5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 group shadow-xl shadow-stone-200 active:scale-[0.98] disabled:active:scale-100"
             >
-              Access Errands Portal
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              {loading ? (
+                <>
+                  <Loader size={18} className="animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Access Errands Portal
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 

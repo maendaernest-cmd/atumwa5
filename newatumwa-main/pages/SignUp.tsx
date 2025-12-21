@@ -1,37 +1,55 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Twitter, Chrome, Gamepad2, ArrowRight, ShoppingBag, Briefcase, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Twitter, Chrome, ArrowRight, ShoppingBag, Briefcase, ShieldCheck, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { SignUpFormData } from '../types';
+import { validatePasswordStrength } from '../utils/authUtils';
 
 export const SignUp: React.FC = () => {
-  const { login } = useAuth();
+  const { signup, loading, error, user } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<'client' | 'atumwa'>('client');
-  const [formData, setFormData] = useState({
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  
+  const [formData, setFormData] = useState<SignUpFormData>({
     name: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: '',
+    role: 'client',
+    agreeToTerms: false
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Validate password strength as user types
+    if (name === 'password' && value) {
+      const validation = validatePasswordStrength(value);
+      setPasswordErrors(validation.errors);
+    } else if (name === 'password' && !value) {
+      setPasswordErrors([]);
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate signup logic: Clients are instant, Messengers are pending
-    if (role === 'client') {
-      login('client');
-      navigate('/');
-    } else {
-      // For messengers, we simulate a 'pending' state by logging in as unverified
-      login('atumwa', true);
-      navigate('/login'); // Redirect to login which will show pending message
+    
+    // Check terms
+    if (!agreeToTerms) {
+      return;
     }
+
+    await signup({
+      ...formData,
+      agreeToTerms
+    });
   };
 
   return (
@@ -54,27 +72,49 @@ export const SignUp: React.FC = () => {
           </h1>
           <p className="text-stone-500 mb-8 font-medium">Join the logistics revolution in Zimbabwe.</p>
 
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="text-sm font-bold text-red-900">{error.message}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {user && !error && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
+              <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="text-sm font-bold text-green-900">Account created! Redirecting...</p>
+              </div>
+            </div>
+          )}
+
           {/* Role Selection */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button
               type="button"
-              onClick={() => setRole('client')}
-              className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${role === 'client' ? 'border-brand-600 bg-brand-50/50 shadow-lg shadow-brand-100' : 'border-stone-100 hover:border-stone-200'}`}
+              onClick={() => setFormData(prev => ({ ...prev, role: 'client' }))}
+              disabled={loading}
+              className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 disabled:opacity-50 ${formData.role === 'client' ? 'border-brand-600 bg-brand-50/50 shadow-lg shadow-brand-100' : 'border-stone-100 hover:border-stone-200'}`}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${role === 'client' ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.role === 'client' ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
                 <ShoppingBag size={20} />
               </div>
-              <span className={`font-bold text-sm ${role === 'client' ? 'text-brand-900' : 'text-stone-500'}`}>I want to Send</span>
+              <span className={`font-bold text-sm ${formData.role === 'client' ? 'text-brand-900' : 'text-stone-500'}`}>I want to Send</span>
             </button>
             <button
               type="button"
-              onClick={() => setRole('atumwa')}
-              className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${role === 'atumwa' ? 'border-brand-600 bg-brand-50/50 shadow-lg shadow-brand-100' : 'border-stone-100 hover:border-stone-200'}`}
+              onClick={() => setFormData(prev => ({ ...prev, role: 'atumwa' }))}
+              disabled={loading}
+              className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 disabled:opacity-50 ${formData.role === 'atumwa' ? 'border-brand-600 bg-brand-50/50 shadow-lg shadow-brand-100' : 'border-stone-100 hover:border-stone-200'}`}
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${role === 'atumwa' ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.role === 'atumwa' ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
                 <Briefcase size={20} />
               </div>
-              <span className={`font-bold text-sm ${role === 'atumwa' ? 'text-brand-900' : 'text-stone-500'}`}>I want to Earn</span>
+              <span className={`font-bold text-sm ${formData.role === 'atumwa' ? 'text-brand-900' : 'text-stone-500'}`}>I want to Earn</span>
             </button>
           </div>
 
@@ -88,7 +128,8 @@ export const SignUp: React.FC = () => {
                 placeholder="John Doe"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                disabled={loading}
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium disabled:opacity-50"
                 required
               />
             </div>
@@ -101,7 +142,8 @@ export const SignUp: React.FC = () => {
                 placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium"
+                disabled={loading}
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium disabled:opacity-50"
                 required
               />
             </div>
@@ -114,19 +156,65 @@ export const SignUp: React.FC = () => {
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14"
+                disabled={loading}
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14 disabled:opacity-50"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-[38px] text-stone-400 hover:text-stone-600 transition-colors"
+                disabled={loading}
+                className="absolute right-5 top-[38px] text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
 
-            {role === 'atumwa' && (
+            {/* Password Strength Indicators */}
+            {formData.password && (
+              <div className="bg-stone-50 p-3 rounded-2xl space-y-2">
+                <p className="text-xs font-bold text-stone-600">Password Requirements:</p>
+                <div className="space-y-1">
+                  <div className={`text-xs font-medium ${formData.password.length >= 8 ? 'text-green-600' : 'text-stone-500'}`}>
+                    {formData.password.length >= 8 ? '✓' : '○'} At least 8 characters
+                  </div>
+                  <div className={`text-xs font-medium ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-stone-500'}`}>
+                    {/[A-Z]/.test(formData.password) ? '✓' : '○'} One uppercase letter
+                  </div>
+                  <div className={`text-xs font-medium ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-stone-500'}`}>
+                    {/[a-z]/.test(formData.password) ? '✓' : '○'} One lowercase letter
+                  </div>
+                  <div className={`text-xs font-medium ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-stone-500'}`}>
+                    {/[0-9]/.test(formData.password) ? '✓' : '○'} One number
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1 relative">
+              <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Confirm Password</label>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                disabled={loading}
+                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14 disabled:opacity-50"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                disabled={loading}
+                className="absolute right-5 top-[38px] text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {/* Messenger Info */}
+            {formData.role === 'atumwa' && (
               <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
                 <ShieldCheck className="text-amber-600 shrink-0" size={20} />
                 <p className="text-xs text-amber-800 font-medium leading-relaxed">
@@ -135,12 +223,37 @@ export const SignUp: React.FC = () => {
               </div>
             )}
 
+            {/* Terms Agreement */}
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={agreeToTerms}
+                onChange={(e) => setAgreeToTerms(e.target.checked)}
+                disabled={loading}
+                className="mt-1 w-5 h-5 rounded border-stone-300 text-brand-600 focus:ring-brand-500 disabled:opacity-50"
+              />
+              <label htmlFor="terms" className="text-xs text-stone-600 font-medium">
+                I agree to the <Link to="/terms" className="text-brand-600 font-bold hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-brand-600 font-bold hover:underline">Privacy Policy</Link>
+              </label>
+            </div>
+
             <button
               type="submit"
-              className="w-full bg-stone-900 hover:bg-stone-800 text-white py-5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 group shadow-xl shadow-stone-200 active:scale-[0.98]"
+              disabled={loading || !agreeToTerms}
+              className="w-full bg-stone-900 hover:bg-stone-800 disabled:bg-stone-400 text-white py-5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 group shadow-xl shadow-stone-200 active:scale-[0.98] disabled:active:scale-100"
             >
-              {role === 'client' ? 'Start Posting Errands' : 'Start Delivering & Earning'}
-              <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              {loading ? (
+                <>
+                  <Loader size={18} className="animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                <>
+                  {formData.role === 'client' ? 'Start Posting Errands' : 'Start Delivering & Earning'}
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 
