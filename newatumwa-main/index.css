@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet CSS for react-leaflet */
+@import 'leaflet/dist/leaflet.css';
+
 /* Atumwa Design System - Corporate Zimbabwe Platform */
 
 :root {

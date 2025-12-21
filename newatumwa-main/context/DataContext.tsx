@@ -2,6 +2,25 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Gig, ChatThread, WalletTransaction, Message, GigType, PaymentMethod } from '../types';
 import { MOCK_USERS, MOCK_GIGS, MOCK_CHATS, WALLET_HISTORY, FEED_UPDATES } from '../constants';
 
+interface AdminAction {
+    id: string;
+    adminId: string;
+    action: string;
+    targetId: string;
+    targetType: 'user' | 'gig' | 'dispute' | 'setting';
+    details: any;
+    timestamp: string;
+}
+
+interface AdminSettings {
+    platformFee: number;
+    surgePricing: boolean;
+    surgeMultiplier: number;
+    serviceAreas: string[];
+    minDeliveryPrice: number;
+    maxDeliveryPrice: number;
+}
+
 interface DataContextType {
     // State
     users: User[];
@@ -12,6 +31,8 @@ interface DataContextType {
     inquiries: any[];
     exchangeRates: { usd_to_zig: number; zig_to_usd: number };
     supportTickets: any[];
+    auditLog: AdminAction[];
+    adminSettings: AdminSettings;
 
     // Actions
     addGig: (gig: Gig) => void;
@@ -27,6 +48,14 @@ interface DataContextType {
     updateTicketStatus: (ticketId: string, status: string) => void;
     sharedLocations: Record<string, boolean>;
     toggleGPSSharing: (userId: string, active: boolean) => void;
+    
+    // Admin Actions
+    suspendUser: (userId: string, adminId: string, reason: string) => void;
+    banUser: (userId: string, adminId: string, reason: string) => void;
+    unsuspendUser: (userId: string, adminId: string) => void;
+    logAdminAction: (adminId: string, action: string, targetId: string, targetType: 'user' | 'gig' | 'dispute' | 'setting', details: any) => void;
+    updateAdminSettings: (settings: Partial<AdminSettings>) => void;
+    updateUserRole: (userId: string, newRole: string, adminId: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -41,6 +70,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [inquiries, setInquiries] = useState<any[]>([]);
     const [supportTickets, setSupportTickets] = useState<any[]>([]);
     const [sharedLocations, setSharedLocations] = useState<Record<string, boolean>>({});
+    const [auditLog, setAuditLog] = useState<AdminAction[]>([]);
+    const [adminSettings, setAdminSettings] = useState<AdminSettings>({
+        platformFee: 0.15,
+        surgePricing: true,
+        surgeMultiplier: 1.5,
+        serviceAreas: ['Downtown', 'Suburbs', 'Airport'],
+        minDeliveryPrice: 2.50,
+        maxDeliveryPrice: 100.00
+    });
 
     // Global Industry Standard Rates (ZiG/USD)
     const [exchangeRates] = useState({
@@ -54,11 +92,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const savedUsers = localStorage.getItem('atumwa_users');
         const savedChats = localStorage.getItem('atumwa_chats');
         const savedTickets = localStorage.getItem('atumwa_tickets');
+        const savedAuditLog = localStorage.getItem('atumwa_audit_log');
+        const savedSettings = localStorage.getItem('atumwa_admin_settings');
 
         if (savedGigs) setGigs(JSON.parse(savedGigs));
         if (savedUsers) setUsers(JSON.parse(savedUsers));
         if (savedChats) setChats(JSON.parse(savedChats));
         if (savedTickets) setSupportTickets(JSON.parse(savedTickets));
+        if (savedAuditLog) setAuditLog(JSON.parse(savedAuditLog));
+        if (savedSettings) setAdminSettings(JSON.parse(savedSettings));
     }, []);
 
     // Save to localStorage whenever state changes
@@ -77,6 +119,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         localStorage.setItem('atumwa_tickets', JSON.stringify(supportTickets));
     }, [supportTickets]);
+
+    useEffect(() => {
+        localStorage.setItem('atumwa_audit_log', JSON.stringify(auditLog));
+    }, [auditLog]);
+
+    useEffect(() => {
+        localStorage.setItem('atumwa_admin_settings', JSON.stringify(adminSettings));
+    }, [adminSettings]);
 
 
     // --- Actions ---
@@ -252,6 +302,51 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const logAdminAction = (adminId: string, action: string, targetId: string, targetType: 'user' | 'gig' | 'dispute' | 'setting', details: any) => {
+        const newAction: AdminAction = {
+            id: `audit_${Date.now()}`,
+            adminId,
+            action,
+            targetId,
+            targetType,
+            details,
+            timestamp: new Date().toISOString()
+        };
+        setAuditLog(prev => [newAction, ...prev]);
+    };
+
+    const suspendUser = (userId: string, adminId: string, reason: string) => {
+        setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isSuspended: true, suspensionReason: reason } : u
+        ));
+        logAdminAction(adminId, 'suspend_user', userId, 'user', { reason });
+    };
+
+    const banUser = (userId: string, adminId: string, reason: string) => {
+        setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isBanned: true, banReason: reason } : u
+        ));
+        logAdminAction(adminId, 'ban_user', userId, 'user', { reason });
+    };
+
+    const unsuspendUser = (userId: string, adminId: string) => {
+        setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, isSuspended: false, suspensionReason: undefined } : u
+        ));
+        logAdminAction(adminId, 'unsuspend_user', userId, 'user', {});
+    };
+
+    const updateAdminSettings = (settings: Partial<AdminSettings>) => {
+        setAdminSettings(prev => ({ ...prev, ...settings }));
+    };
+
+    const updateUserRole = (userId: string, newRole: string, adminId: string) => {
+        setUsers(prev => prev.map(u => 
+            u.id === userId ? { ...u, role: newRole as any } : u
+        ));
+        logAdminAction(adminId, 'update_role', userId, 'user', { newRole });
+    };
+
     return (
         <DataContext.Provider value={{
             users,
@@ -261,6 +356,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             feed,
             inquiries,
             exchangeRates,
+            supportTickets,
+            auditLog,
+            adminSettings,
             addGig,
             updateGigStatus,
             assignGig,
@@ -270,11 +368,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             verifyUser,
             broadcastInquiry,
             confirmPayment,
-            supportTickets,
             createTicket,
             updateTicketStatus,
             sharedLocations,
-            toggleGPSSharing
+            toggleGPSSharing,
+            suspendUser,
+            banUser,
+            unsuspendUser,
+            logAdminAction,
+            updateAdminSettings,
+            updateUserRole
         }}>
             {children}
         </DataContext.Provider>

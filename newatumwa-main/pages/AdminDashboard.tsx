@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Circle, Marker } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useToast } from '../context/ToastContext';
 import { MOCK_GIGS } from '../constants';
 import {
@@ -32,7 +32,8 @@ import {
   Navigation,
   ArrowRight,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -146,7 +147,7 @@ export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
-  const { users, gigs, walletHistory, updateGigStatus, exchangeRates, inquiries, supportTickets, updateTicketStatus } = useData();
+  const { users, gigs, walletHistory, updateGigStatus, exchangeRates, inquiries, supportTickets, updateTicketStatus, auditLog, adminSettings, suspendUser, banUser, unsuspendUser, logAdminAction, updateAdminSettings, updateUserRole } = useData();
   const [showGreeting, setShowGreeting] = useState(() => {
     // Only show greeting immediately after login
     const justLoggedIn = sessionStorage.getItem('just_logged_in') === 'true';
@@ -169,15 +170,7 @@ export const AdminDashboard: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [showGreeting]);
-  const [activeTab, setActiveTab] = useState<'analytics' | 'content' | 'moderation' | 'gigs' | 'messaging' | 'fleet' | 'support'>('analytics');
-
-  // Calculate Real-time Stats
-  const kpiStats = {
-    users: users.length,
-    activeGigs: gigs.filter(g => g.status === 'open' || g.status === 'in-progress').length,
-    disputes: 8, // Persist Mock for now or add to context
-    revenue: walletHistory.reduce((acc, t) => t.type === 'debit' ? acc + Math.abs(t.amount) : acc, 0) + 12400 // Base + transactions
-  };
+  const [activeTab, setActiveTab] = useState<'analytics' | 'content' | 'moderation' | 'gigs' | 'messaging' | 'fleet' | 'support' | 'users' | 'audit' | 'revenue' | 'settings'>('analytics');
 
   const [liveChartData, setLiveChartData] = useState(INITIAL_ACTIVITY_DATA);
 
@@ -199,6 +192,35 @@ export const AdminDashboard: React.FC = () => {
   const [gigStatusFilter, setGigStatusFilter] = useState<'all' | 'open' | 'in-progress' | 'completed' | 'expired'>('all');
   const [gigTypeFilter, setGigTypeFilter] = useState<'all' | 'prescription' | 'paperwork' | 'shopping' | 'parcel'>('all');
   const [deletingGigId, setDeletingGigId] = useState<string | null>(null);
+
+  // User Management State
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [suspendReason, setSuspendReason] = useState('');
+  const [showSuspendModal, setShowSuspendModal] = useState<string | null>(null);
+
+  // Settings State
+  const [platformFee, setPlatformFee] = useState(adminSettings.platformFee);
+  const [surgeMultiplier, setSurgeMultiplier] = useState(adminSettings.surgeMultiplier);
+  const [minPrice, setMinPrice] = useState(adminSettings.minDeliveryPrice);
+  const [maxPrice, setMaxPrice] = useState(adminSettings.maxDeliveryPrice);
+
+  // Global Search State
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Analytics Date Range State
+  const [dateRange, setDateRange] = useState('week');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
+  // Calculate Real-time Stats (After all state declarations)
+  const kpiStats = {
+    users: users.length,
+    activeGigs: gigs.filter(g => g.status === 'open' || g.status === 'in-progress').length,
+    disputes: disputes.length,
+    revenue: walletHistory.reduce((acc, t) => t.type === 'debit' ? acc + Math.abs(t.amount) : acc, 0) + 12400
+  };
 
   // Simulate Real-time Data Updates for Analytics (Partial)
   useEffect(() => {
@@ -561,6 +583,45 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </motion.div>
 
+      {/* Global Search */}
+      <div className="mb-6 relative">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="🔍 Global search: users, gigs, disputes..."
+            value={globalSearch}
+            onChange={(e) => {
+              setGlobalSearch(e.target.value);
+              setShowSearchResults(e.target.value.length > 0);
+            }}
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+        </div>
+
+        {showSearchResults && globalSearch && (
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+            <div className="divide-y divide-slate-100">
+              {users.filter(u => u.name.toLowerCase().includes(globalSearch.toLowerCase()) || u.email.toLowerCase().includes(globalSearch.toLowerCase())).slice(0, 5).map(u => (
+                <div key={u.id} className="p-3 hover:bg-slate-50 cursor-pointer flex items-center gap-3">
+                  <img src={u.avatar} alt="" className="w-8 h-8 rounded-full" />
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-slate-800">{u.name}</div>
+                    <div className="text-xs text-slate-500">{u.role}</div>
+                  </div>
+                </div>
+              ))}
+              {gigs.filter(g => g.title.toLowerCase().includes(globalSearch.toLowerCase())).slice(0, 5).map(g => (
+                <div key={g.id} className="p-3 hover:bg-slate-50 cursor-pointer">
+                  <div className="text-sm font-bold text-slate-800">{g.title}</div>
+                  <div className="text-xs text-slate-500">{g.status}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Dashboard Header */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
         <div>
@@ -608,6 +669,34 @@ export const AdminDashboard: React.FC = () => {
           >
             <HelpCircle size={18} className="mr-3" />
             Support Helpdesk
+          </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex items-center px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest ${activeTab === 'users' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}
+          >
+            <Users size={18} className="mr-3" />
+            User Management
+          </button>
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`flex items-center px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest ${activeTab === 'audit' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}
+          >
+            <RefreshCcw size={18} className="mr-3" />
+            Audit Log
+          </button>
+          <button
+            onClick={() => setActiveTab('revenue')}
+            className={`flex items-center px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest ${activeTab === 'revenue' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}
+          >
+            <DollarSign size={18} className="mr-3" />
+            Revenue
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`flex items-center px-4 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-widest ${activeTab === 'settings' ? 'bg-brand-600 text-white shadow-lg' : 'text-slate-500 hover:bg-white'}`}
+          >
+            <RefreshCcw size={18} className="mr-3" />
+            Settings
           </button>
         </div>
       </div>
@@ -682,10 +771,108 @@ export const AdminDashboard: React.FC = () => {
       {activeTab === 'analytics' && (
         <div className="space-y-6 animate-in fade-in duration-300">
 
+          {/* Date Range & Export Controls */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex gap-4 items-center flex-wrap">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDateRange('week')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${dateRange === 'week' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                This Week
+              </button>
+              <button
+                onClick={() => setDateRange('month')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${dateRange === 'month' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                This Month
+              </button>
+              <button
+                onClick={() => setDateRange('custom')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${dateRange === 'custom' ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                Custom Range
+              </button>
+            </div>
+
+            {dateRange === 'custom' && (
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                />
+                <span className="text-slate-500 font-bold">to</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                const data = {
+                  dateRange,
+                  customStartDate,
+                  customEndDate,
+                  gigs: gigs.length,
+                  users: users.length,
+                  revenue: kpiStats.revenue,
+                  disputes: disputes.length,
+                  timestamp: new Date().toISOString()
+                };
+                const csvContent = Object.entries(data).map(([k, v]) => `${k},${v}`).join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `admin-report-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                addToast('Export Successful', 'Report downloaded as CSV', 'success');
+              }}
+              className="ml-auto px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 flex items-center gap-2"
+            >
+              <Download size={16} /> Export Report
+            </button>
+          </div>
+
+          {/* System Alerts & Monitoring */}
+          <div className="bg-gradient-to-r from-red-50 to-amber-50 rounded-xl shadow-sm border border-red-200 p-6">
+            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <AlertTriangle className="text-red-600" size={20} />
+              System Alerts & Monitoring
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-lg border border-red-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-slate-800">High Disputes Rate</span>
+                  <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold">CRITICAL</span>
+                </div>
+                <p className="text-xs text-slate-600">Dispute rate at {((disputes.length / gigs.length) * 100).toFixed(1)}% - monitor closely</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-amber-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-slate-800">Unverified Users</span>
+                  <span className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full font-bold">WARNING</span>
+                </div>
+                <p className="text-xs text-slate-600">{users.filter(u => !u.isVerified).length} users need verification</p>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-green-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-bold text-slate-800">Platform Health</span>
+                  <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">OPTIMAL</span>
+                </div>
+                <p className="text-xs text-slate-600">All systems operational - {gigs.length} active gigs</p>
+              </div>
+            </div>
+          </div>
+
           {/* Hyper-Live Platform Oversight (Voyager Theme) */}
-          <div className="relative h-96 w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-white group">
-            <div className="absolute inset-0 z-0">
-              <MapContainer center={[-17.8292, 31.0522]} zoom={13} style={{ height: '100%', width: '100%', background: '#f8fafc' }} zoomControl={false}>
+          <div className="relative h-96 w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-200 bg-white">
+            <MapContainer center={[-17.8292, 31.0522]} zoom={13} style={{ height: '100%', width: '100%', background: '#f8fafc' }} zoomControl={false} className="rounded-3xl">
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
                 {/* Global Heatmap Clusters */}
                 <Circle center={[-17.815, 31.030]} radius={800} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.15, weight: 0 }} />
@@ -696,7 +883,6 @@ export const AdminDashboard: React.FC = () => {
                   <Circle key={i} center={[lat, 31.04 + (i * 0.01)]} radius={50} pathOptions={{ color: '#10b981', fillColor: '#10b981', fillOpacity: 0.8, weight: 2 }} />
                 ))}
               </MapContainer>
-            </div>
 
             {/* Overlay Telemetry */}
             <div className="absolute inset-0 z-10 p-6 flex flex-col justify-between pointer-events-none">
@@ -711,7 +897,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <div className="flex gap-2">
                   <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
-                    <Circle size={8} fill="#10b981" className="text-emerald-500" />
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                     <span className="text-[10px] font-black text-white uppercase">42 Active Couriers</span>
                   </div>
                   <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2">
@@ -1716,6 +1902,327 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- USER MANAGEMENT TAB --- */}
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">User Management</h2>
+              <p className="text-sm font-medium text-slate-500">Manage users, roles, and permissions.</p>
+            </div>
+            {selectedUsers.size > 0 && (
+              <div className="bg-brand-50 border border-brand-300 px-4 py-2 rounded-lg">
+                <span className="text-sm font-bold text-brand-700">{selectedUsers.size} user(s) selected</span>
+                <button
+                  onClick={() => selectedUsers.forEach(id => banUser(id, user?.id || '', 'Bulk action'))}
+                  className="ml-3 px-3 py-1 text-xs font-bold bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Ban All
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50">
+              <div className="flex gap-4">
+                <input
+                  type="text"
+                  placeholder="Search users by name, email, or ID..."
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                />
+                <select className="px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
+                  <option>All Roles</option>
+                  <option>Admin</option>
+                  <option>Client</option>
+                  <option>Atumwa</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                  <tr>
+                    <th className="p-4">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedUsers(new Set(users.map(u => u.id)));
+                          } else {
+                            setSelectedUsers(new Set());
+                          }
+                        }}
+                      />
+                    </th>
+                    <th className="p-4">User</th>
+                    <th className="p-4">Role</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Verification</th>
+                    <th className="p-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {users.filter(u => u.name.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
+                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 cursor-pointer"
+                          checked={selectedUsers.has(u.id)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedUsers);
+                            if (e.target.checked) {
+                              newSelected.add(u.id);
+                            } else {
+                              newSelected.delete(u.id);
+                            }
+                            setSelectedUsers(newSelected);
+                          }}
+                        />
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <img src={u.avatar} alt="" className="w-8 h-8 rounded-full" />
+                          <div>
+                            <div className="font-bold text-slate-800">{u.name}</div>
+                            <div className="text-xs text-slate-500">{u.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <select defaultValue={u.role} className="px-2 py-1 border border-slate-300 rounded text-xs">
+                          <option>admin</option>
+                          <option>client</option>
+                          <option>atumwa</option>
+                        </select>
+                      </td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${(u as any).isBanned ? 'bg-red-100 text-red-700' : (u as any).isSuspended ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                          {(u as any).isBanned ? 'Banned' : (u as any).isSuspended ? 'Suspended' : 'Active'}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className={`text-xs font-bold ${u.isVerified ? 'text-green-600' : 'text-slate-400'}`}>
+                          {u.isVerified ? '✓ Verified' : 'Unverified'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right space-x-2">
+                        <button
+                          onClick={() => setShowSuspendModal(u.id)}
+                          className="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded hover:bg-amber-200"
+                        >
+                          Suspend
+                        </button>
+                        <button
+                          onClick={() => banUser(u.id, user?.id || '', 'Admin action')}
+                          className="px-3 py-1 text-xs font-medium bg-red-100 text-red-700 rounded hover:bg-red-200"
+                        >
+                          Ban
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- AUDIT LOG TAB --- */}
+      {activeTab === 'audit' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase mb-2">System Audit Log</h2>
+            <p className="text-sm font-medium text-slate-500">Track all administrative actions and system changes.</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50">
+              <div className="flex gap-4">
+                <input type="text" placeholder="Search audit logs..." className="flex-1 px-4 py-2 border border-slate-300 rounded-lg" />
+                <select className="px-4 py-2 border border-slate-300 rounded-lg">
+                  <option>All Actions</option>
+                  <option>User Changes</option>
+                  <option>Gig Changes</option>
+                  <option>Settings Changes</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+              {auditLog.length > 0 ? (
+                auditLog.map((log) => (
+                  <div key={log.id} className="p-4 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-slate-800 text-sm">{log.action.replace(/_/g, ' ').toUpperCase()}</span>
+                          <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">{log.targetType}</span>
+                        </div>
+                        <p className="text-xs text-slate-500">Admin: {log.adminId} | Target: {log.targetId}</p>
+                        {log.details.reason && <p className="text-xs text-slate-600 mt-1">Reason: {log.details.reason}</p>}
+                      </div>
+                      <span className="text-xs text-slate-400">{new Date(log.timestamp).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-slate-500">No audit log entries yet.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- REVENUE DASHBOARD TAB --- */}
+      {activeTab === 'revenue' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase mb-2">Revenue Dashboard</h2>
+            <p className="text-sm font-medium text-slate-500">Monitor platform revenue and financial metrics.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <div className="text-slate-500 text-xs font-bold uppercase mb-2">Total Revenue</div>
+              <div className="text-3xl font-black text-slate-900">${(walletHistory.reduce((acc, t) => t.type === 'debit' ? acc + Math.abs(t.amount) : acc, 0) + 12400).toFixed(2)}</div>
+              <div className="text-xs text-green-600 font-medium mt-2">↑ 12% from last month</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <div className="text-slate-500 text-xs font-bold uppercase mb-2">Platform Fees Collected</div>
+              <div className="text-3xl font-black text-slate-900">${((walletHistory.reduce((acc, t) => t.type === 'debit' ? acc + Math.abs(t.amount) : acc, 0) + 12400) * 0.15).toFixed(2)}</div>
+              <div className="text-xs text-slate-500 font-medium mt-2">15% commission</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <div className="text-slate-500 text-xs font-bold uppercase mb-2">Pending Payouts</div>
+              <div className="text-3xl font-black text-slate-900">${(walletHistory.filter(t => t.status === 'pending').reduce((acc, t) => acc + Math.abs(t.amount), 0)).toFixed(2)}</div>
+              <div className="text-xs text-amber-600 font-medium mt-2">{walletHistory.filter(t => t.status === 'pending').length} transactions</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+              <div className="text-slate-500 text-xs font-bold uppercase mb-2">Completed Transactions</div>
+              <div className="text-3xl font-black text-slate-900">{walletHistory.filter(t => t.status === 'completed').length}</div>
+              <div className="text-xs text-green-600 font-medium mt-2">This month</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 className="font-bold text-slate-800 mb-4">Recent Transactions</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-200">
+                  <tr className="text-slate-600 font-semibold">
+                    <th className="p-3">Date</th>
+                    <th className="p-3">Description</th>
+                    <th className="p-3">Type</th>
+                    <th className="p-3">Amount</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {walletHistory.slice(0, 10).map((t) => (
+                    <tr key={t.id} className="hover:bg-slate-50">
+                      <td className="p-3 text-slate-600">{t.date}</td>
+                      <td className="p-3 text-slate-700">{t.description}</td>
+                      <td className="p-3">
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${t.type === 'credit' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                          {t.type}
+                        </span>
+                      </td>
+                      <td className="p-3 font-bold text-slate-800">${Math.abs(t.amount).toFixed(2)}</td>
+                      <td className="p-3">
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${t.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- SETTINGS TAB --- */}
+      {activeTab === 'settings' && (
+        <div className="space-y-6 max-w-3xl">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase mb-2">Platform Settings</h2>
+            <p className="text-sm font-medium text-slate-500">Configure platform-wide settings and rules.</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-slate-800 mb-2">Platform Fee (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={platformFee}
+                onChange={(e) => setPlatformFee(parseFloat(e.target.value))}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">Commission taken from each gig (currently {(platformFee * 100).toFixed(1)}%)</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-800 mb-2">Surge Pricing Multiplier</label>
+              <input
+                type="number"
+                step="0.1"
+                value={surgeMultiplier}
+                onChange={(e) => setSurgeMultiplier(parseFloat(e.target.value))}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">Multiplier applied during high-demand periods (current: {surgeMultiplier}x)</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-2">Minimum Delivery Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(parseFloat(e.target.value))}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-2">Maximum Delivery Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(parseFloat(e.target.value))}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                updateAdminSettings({
+                  platformFee,
+                  surgeMultiplier,
+                  minDeliveryPrice: minPrice,
+                  maxDeliveryPrice: maxPrice
+                });
+                addToast('Settings Updated', 'Platform settings have been saved successfully.', 'success');
+              }}
+              className="w-full bg-brand-600 text-white py-3 rounded-lg font-bold hover:bg-brand-700 transition-all"
+            >
+              Save Settings
+            </button>
           </div>
         </div>
       )}

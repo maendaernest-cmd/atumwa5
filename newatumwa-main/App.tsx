@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { DataProvider } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
+import 'leaflet/dist/leaflet.css';
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home').then(module => ({ default: module.Home })));
