@@ -780,11 +780,15 @@ export const ClientDashboard: React.FC = () => {
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="glass-card p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-all">
-              <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner">
-                <DollarSign size={28} />
-              </div>
-            </motion.div>
+              <motion.div variants={itemVariants} className="glass-card p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-all">
+                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 shadow-inner">
+                  <DollarSign size={28} />
+                </div>
+                <div>
+                  <div className="text-3xl font-black text-slate-900 leading-tight">${dashboard.totalSpent.toFixed(0)}</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Spent</div>
+                </div>
+              </motion.div>
           </div>
 
           {activeTab === 'templates' && (
@@ -1537,7 +1541,7 @@ export const ClientDashboard: React.FC = () => {
             </motion.div>
           )
         }
-      </AnimatePresence >
+      </AnimatePresence>
 
       {/* Ask About Place Modal */}
       {
@@ -1647,6 +1651,6 @@ export const ClientDashboard: React.FC = () => {
           </div>
         )
       }
-    </motion.div >
+    </motion.div>
   );
 };
