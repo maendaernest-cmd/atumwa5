@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useToast } from '../context/ToastContext';
 import { MOCK_GIGS } from '../constants';
+import { MarketRatesCard } from '../components/MarketRatesCard';
 import {
   BarChart3,
   Users,
@@ -33,7 +34,20 @@ import {
   ArrowRight,
   HelpCircle,
   MessageSquare,
-  Download
+  Download,
+  Calculator,
+  CreditCard,
+  Receipt,
+  PieChart,
+  Target,
+  Wallet,
+  Zap,
+  Settings,
+  FileText,
+  Calendar,
+  TrendingDown,
+  Plus,
+  Minus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -44,12 +58,19 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  LineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Cell,
+  Area,
+  AreaChart
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { X } from 'lucide-react';
+import { Button } from '../components/ui/Button';
 
 // --- Mock Data for Analytics ---
 const INITIAL_ACTIVITY_DATA = [
@@ -138,8 +159,6 @@ const MOCK_BROADCAST_HISTORY: BroadcastMessage[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 mins ago
   }
 ];
-
-import { MarketRatesCard } from '../components/MarketRatesCard';
 
 // ... (keep includes)
 

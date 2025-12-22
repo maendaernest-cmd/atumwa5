@@ -194,19 +194,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Get stored users
       let users = getStoredUsers();
-      const storedUser = users.find(u => u.email === email);
+      let storedUser = users.find(u => u.email === email);
 
-      // DEV_MODE: Allow test emails with any password
+      // DEV_MODE: Ensure test users exist and allow login with any password
       if (DEV_MODE && isTestEmail(email)) {
-        const mockUser = users.find(u => u.email === email);
-        if (mockUser) {
+        // Ensure test users are in the users array
+        const defaultUsers = initializeDefaultUsers();
+        defaultUsers.forEach(defaultUser => {
+          if (!users.find(u => u.email === defaultUser.email)) {
+            users.push(defaultUser);
+          }
+        });
+        saveUsers(users);
+
+        storedUser = users.find(u => u.email === email);
+        if (storedUser) {
           clearRateLimit(email);
           const sessionToken = generateSessionToken();
-          mockUser.lastLoginAt = new Date().toISOString();
-          mockUser.failedLoginAttempts = 0;
+          storedUser.lastLoginAt = new Date().toISOString();
+          storedUser.failedLoginAttempts = 0;
           saveUsers(users);
-          setUser(mockUser);
-          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
+          setUser(storedUser);
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(storedUser));
           setLoading(false);
           return;
         }

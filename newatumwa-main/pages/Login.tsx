@@ -28,11 +28,9 @@ export const Login: React.FC = () => {
   // Redirection Logic
   useEffect(() => {
     if (user && !loading) {
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else if (user.role === 'atumwa' && !user.isVerified) {
+      if (user.role === 'atumwa' && !user.isVerified) {
         // Show pending approval message (stays on login page)
-      } else if ((user.role === 'atumwa' && user.isVerified) || user.role === 'client') {
+      } else {
         navigate('/dashboard');
       }
     }

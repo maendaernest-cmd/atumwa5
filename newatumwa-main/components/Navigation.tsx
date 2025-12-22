@@ -71,7 +71,7 @@ export const Navigation: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex flex-col space-y-1" onClick={closeMobileMenu}>
+      <div className="flex flex-col space-y-1 overflow-y-auto flex-1" onClick={closeMobileMenu}>
         <NavItem to="/" icon={Home} label="Home" isCollapsed={isCollapsed} />
         {user?.role === 'admin' && (
           <NavItem to="/admin" icon={LayoutDashboard} label="Admin" isCollapsed={isCollapsed} />

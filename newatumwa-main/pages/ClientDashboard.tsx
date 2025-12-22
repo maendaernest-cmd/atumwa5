@@ -390,7 +390,7 @@ export const ClientDashboard: React.FC = () => {
   const [reportTask, setReportTask] = useState<Gig | null>(null);
   const [reportCategory, setReportCategory] = useState('');
   const [reportDescription, setReportDescription] = useState('');
-  const [activeTab, setActiveTab] = useState<'discover' | 'active' | 'favorites' | 'history' | 'payments' | 'help'>('discover');
+  const [activeTab, setActiveTab] = useState<'discover' | 'active' | 'favorites' | 'history' | 'payments' | 'templates' | 'analytics' | 'notifications' | 'help'>('active');
   const [askPlaceQuery, setAskPlaceQuery] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const [askResponse, setAskResponse] = useState<string | null>(null);
@@ -684,6 +684,78 @@ export const ClientDashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="bg-white rounded-2xl p-1 shadow-sm border border-slate-100 mb-6">
+        <div className="flex overflow-x-auto scrollbar-hide">
+          {[
+            { key: 'active', label: 'Active Tasks', icon: Clock },
+            { key: 'templates', label: 'Templates', icon: BookOpen },
+            { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+            { key: 'favorites', label: 'Favorites', icon: User },
+            { key: 'history', label: 'History', icon: History },
+            { key: 'payments', label: 'Payments', icon: Wallet },
+            { key: 'notifications', label: 'Notifications', icon: Bell },
+            { key: 'help', label: 'Help', icon: HelpCircle }
+          ].map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key as any)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+                activeTab === key
+                  ? 'bg-brand-500 text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick Actions Panel */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/gigs', { state: { openPostModal: true, urgency: 'priority' } })}
+          className="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-2xl shadow-lg shadow-red-500/20 flex flex-col items-center gap-2 hover:shadow-xl transition-all"
+        >
+          <Zap size={24} />
+          <span className="text-xs font-bold">Urgent Task</span>
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => alert('Repeat last task functionality would be implemented here')}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-500/20 flex flex-col items-center gap-2 hover:shadow-xl transition-all"
+        >
+          <RotateCcw size={24} />
+          <span className="text-xs font-bold">Repeat Last</span>
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate('/messages')}
+          className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg shadow-green-500/20 flex flex-col items-center gap-2 hover:shadow-xl transition-all"
+        >
+          <MessageSquare size={24} />
+          <span className="text-xs font-bold">Live Chat</span>
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setShowAskPlace(true)}
+          className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-2xl shadow-lg shadow-purple-500/20 flex flex-col items-center gap-2 hover:shadow-xl transition-all"
+        >
+          <HelpCircle size={24} />
+          <span className="text-xs font-bold">Ask About Place</span>
+        </motion.button>
+      </div>
+
       {/* Stats Cards & Market Rates */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
@@ -713,95 +785,231 @@ export const ClientDashboard: React.FC = () => {
                 <DollarSign size={28} />
               </div>
             </motion.div>
-          )}
+          </div>
 
-          {activeTab === 'favorites' && (
+          {activeTab === 'templates' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              {/* Favorite Messengers */}
+              {/* Task Templates */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <User size={20} className="text-red-600" />
-                    Favorite Messengers
+                    <BookOpen size={20} className="text-purple-600" />
+                    Task Templates
                   </h3>
-                  <button className="text-brand-600 font-bold text-sm">Browse All</button>
+                  <button className="bg-brand-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-brand-700 transition-colors flex items-center gap-2">
+                    <Plus size={16} />
+                    Create Template
+                  </button>
                 </div>
+
                 <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { name: 'Tendai M.', rating: 4.9, tasks: 127, responseTime: '2 min', specialties: ['Pharmacy', 'Shopping'], avatar: '👨‍💼', isFavorite: true },
-                    { name: 'Grace K.', rating: 4.8, tasks: 89, responseTime: '5 min', specialties: ['Food', 'Documents'], avatar: '👩‍💼', isFavorite: true },
-                    { name: 'Michael R.', rating: 4.9, tasks: 156, responseTime: '1 min', specialties: ['Urgent', 'Banking'], avatar: '👨‍💼', isFavorite: true }
-                  ].map((messenger, index) => (
-                    <div key={index} className="glass-card p-4 rounded-2xl">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-sm">
-                          {messenger.avatar}
-                        </div>
+                  {dashboard.templates.map(template => (
+                    <div key={template.id} className="glass-card p-6 rounded-2xl hover:shadow-lg transition-all">
+                      <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-slate-900">{messenger.name}</span>
-                            <button className={`text-sm ${messenger.isFavorite ? 'text-red-500' : 'text-slate-400'}`}>
-                              ❤️
-                            </button>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-bold text-slate-900">{template.name}</h4>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              template.type === 'prescription' ? 'bg-blue-100 text-blue-700' :
+                              template.type === 'shopping' ? 'bg-green-100 text-green-700' :
+                              'bg-purple-100 text-purple-700'
+                            }`}>
+                              {template.type}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-3 text-sm text-slate-500 mb-2">
-                            <div className="flex items-center gap-1">
-                              <Star size={12} className="text-amber-500 fill-current" />
-                              <span>{messenger.rating}</span>
-                            </div>
-                            <span>•</span>
-                            <span>{messenger.tasks} tasks</span>
-                            <span>•</span>
-                            <span>{messenger.responseTime} response</span>
+                          <p className="text-sm text-slate-600 mb-3">{template.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+                            <span>Used {template.usageCount} times</span>
+                            <span>${template.estimatedPrice.toFixed(2)} avg</span>
+                            {template.isPublic && <span className="text-green-600">Public</span>}
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {messenger.specialties.map((specialty, idx) => (
-                              <span key={idx} className="bg-brand-100 text-brand-700 text-xs px-2 py-0.5 rounded-full">
-                                {specialty}
-                              </span>
-                            ))}
+                          <div className="text-xs text-slate-500">
+                            <strong>Stops:</strong> {template.stops.map(stop => stop.location).join(' → ')}
                           </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => navigate('/gigs', { state: { templateId: template.id } })}
+                            className="bg-brand-600 text-white px-3 py-2 rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors"
+                          >
+                            Use Template
+                          </button>
+                          <button className="bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-200 transition-colors">
+                            Edit
+                          </button>
                         </div>
                       </div>
-                      <button className="w-full bg-brand-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-brand-700 transition-colors">
-                        Request This Messenger
-                      </button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Favorite Locations */}
+              {/* Template Analytics */}
+              <div className="glass-card p-6 rounded-3xl">
+                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <BarChart3 size={20} className="text-blue-600" />
+                  Template Performance
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-blue-600 mb-2">{dashboard.templates.length}</div>
+                    <div className="text-sm text-slate-600">Total Templates</div>
+                    <div className="text-xs text-blue-600 font-medium mt-1">Save time</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-green-600 mb-2">
+                      {dashboard.templates.reduce((acc, t) => acc + t.usageCount, 0)}
+                    </div>
+                    <div className="text-sm text-slate-600">Times Used</div>
+                    <div className="text-xs text-green-600 font-medium mt-1">Popular choices</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-black text-purple-600 mb-2">
+                      ${(dashboard.templates.reduce((acc, t) => acc + (t.estimatedPrice * t.usageCount), 0)).toFixed(0)}
+                    </div>
+                    <div className="text-sm text-slate-600">Value Generated</div>
+                    <div className="text-xs text-purple-600 font-medium mt-1">Worth it</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Analytics Dashboard */}
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <BarChart3 size={20} className="text-blue-600" />
+                  Usage Analytics
+                </h3>
+
+                {/* Spending Patterns */}
+                <div className="glass-card p-6 rounded-3xl">
+                  <h4 className="text-lg font-bold text-slate-900 mb-4">Spending Patterns</h4>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">This Month</span>
+                        <span className="text-lg font-bold text-slate-900">${(dashboard.totalSpent * 0.3).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">Last Month</span>
+                        <span className="text-lg font-bold text-slate-900">${(dashboard.totalSpent * 0.25).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-slate-600">Average per Task</span>
+                        <span className="text-lg font-bold text-slate-900">${(dashboard.totalSpent / dashboard.completedTasksCount || 1).toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-3xl font-black text-green-600 mb-2">+15%</div>
+                        <div className="text-sm text-slate-600">vs last month</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Messenger Performance */}
+                <div className="glass-card p-6 rounded-3xl">
+                  <h4 className="text-lg font-bold text-slate-900 mb-4">Top Messengers</h4>
+                  <div className="space-y-3">
+                    {[
+                      { name: 'Tendai M.', tasks: 12, rating: 4.9, avgTime: '18 min' },
+                      { name: 'Grace K.', tasks: 8, rating: 4.8, avgTime: '22 min' },
+                      { name: 'Michael R.', tasks: 6, rating: 4.9, avgTime: '15 min' }
+                    ].map((messenger, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-600 text-sm font-bold">
+                            {messenger.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-900">{messenger.name}</div>
+                            <div className="text-xs text-slate-500">{messenger.tasks} tasks • {messenger.avgTime} avg</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star size={14} className="text-amber-500 fill-current" />
+                          <span className="text-sm font-medium">{messenger.rating}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Task Completion Times */}
+                <div className="glass-card p-6 rounded-3xl">
+                  <h4 className="text-lg font-bold text-slate-900 mb-4">Task Completion Insights</h4>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-blue-600 mb-2">24min</div>
+                      <div className="text-sm text-slate-600">Average completion</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-green-600 mb-2">85%</div>
+                      <div className="text-sm text-slate-600">On-time delivery</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-black text-purple-600 mb-2">4.7</div>
+                      <div className="text-sm text-slate-600">Average rating</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'notifications' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-6"
+            >
+              {/* Notifications Center */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <MapPin size={20} className="text-blue-600" />
-                    Favorite Locations
+                    <Bell size={20} className="text-orange-600" />
+                    Notifications
                   </h3>
-                  <button className="text-brand-600 font-bold text-sm">+ Add Location</button>
+                  <button className="text-brand-600 font-medium text-sm hover:underline">Mark all read</button>
                 </div>
-                <div className="grid gap-4">
-                  {MOCK_CLIENT_DASHBOARD.savedAddresses.map(addr => (
-                    <div key={addr.id} className="flex items-center gap-4 p-4 glass-card rounded-xl">
-                      <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">
-                        {addr.name.toLowerCase().includes('home') ? '🏠' : addr.name.toLowerCase().includes('work') ? '🏢' : '📍'}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-slate-800">{addr.name}</h4>
-                        <p className="text-sm text-slate-500">{addr.address}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${addr.isDefault ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
-                          {addr.isDefault ? 'Default' : 'Saved'}
-                        </span>
-                        <button className="text-slate-400 hover:text-slate-600 p-1">
-                          <Settings size={16} />
-                        </button>
+
+                <div className="space-y-3">
+                  {[
+                    { type: 'task_update', title: 'Task Accepted', message: 'Your pharmacy pickup has been accepted by Tendai M.', time: '2 min ago', unread: true },
+                    { type: 'promotion', title: 'Special Offer', message: 'Get 20% off your next 3 tasks!', time: '1 hour ago', unread: true },
+                    { type: 'system', title: 'Platform Update', message: 'New features available in your dashboard', time: '2 hours ago', unread: false },
+                    { type: 'task_complete', title: 'Task Completed', message: 'Grocery delivery completed successfully', time: '1 day ago', unread: false }
+                  ].map((notification, index) => (
+                    <div key={index} className={`p-4 rounded-xl border transition-all ${notification.unread ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}>
+                      <div className="flex items-start gap-3">
+                        <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${notification.unread ? 'bg-blue-500' : 'bg-transparent'}`}></div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-slate-900">{notification.title}</h4>
+                            <span className="text-xs text-slate-500">{notification.time}</span>
+                          </div>
+                          <p className="text-sm text-slate-600">{notification.message}</p>
+                        </div>
+                        {notification.type === 'promotion' && (
+                          <button className="bg-green-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-green-700">
+                            Claim
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -810,76 +1018,25 @@ export const ClientDashboard: React.FC = () => {
             </motion.div>
           )}
 
-          {activeTab === 'history' && (
+          {activeTab === 'active' && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              {/* Task History */}
+              {/* Active Tasks */}
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <History size={20} className="text-purple-600" />
-                    Task History
-                  </h3>
-                  <div className="flex gap-2">
-                    <select className="px-3 py-1 bg-slate-100 rounded-lg text-sm">
-                      <option>All Tasks</option>
-                      <option>This Week</option>
-                      <option>This Month</option>
-                      <option>This Year</option>
-                    </select>
-                  </div>
-                </div>
-
-                {dashboard.completedTasks.length > 0 ? (
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Clock size={20} className="text-blue-600" />
+                  Active Tasks
+                </h3>
+                {dashboard.activeTasks.length > 0 ? (
                   <div className="space-y-3">
-                    {dashboard.completedTasks.map(task => (
-                      <div key={task.id} className="glass-card p-4 rounded-xl hover:shadow-md transition-all">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-slate-800">{task.title}</h4>
-                              <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full">Completed</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
-                              <MapPin size={14} />
-                              <span>{task.distance}</span>
-                              <span>•</span>
-                              <span>${task.price.toFixed(2)}</span>
-                              <span>•</span>
-                              <span>{new Date().toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleTaskAction('reorder', task.id)}
-                              className="bg-brand-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors"
-                            >
-                              Reorder
-                            </button>
-                            <button
-                              onClick={() => handleTaskAction('rate', task.id)}
-                              className="bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
-                            >
-                              Rate
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                    {dashboard.activeTasks.map(task => (
+                      <TaskCard key={task.id} task={task} onAction={handleTaskAction} showStatus={true} sharedLocations={sharedLocations} />
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-12 glass-card rounded-3xl">
-                    <History className="mx-auto text-slate-300 mb-4" size={48} />
-                    <h3 className="text-lg font-medium text-slate-600 mb-2">No task history yet</h3>
-                    <p className="text-slate-500">Your completed tasks will appear here.</p>
-                  </div>
-                )}
-              </div>
-                  ))
                 ) : (
                   <div className="text-center py-12 glass-card rounded-3xl">
                     <Clock className="mx-auto text-slate-300 mb-4" size={48} />
@@ -1059,13 +1216,13 @@ export const ClientDashboard: React.FC = () => {
                           </div>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => onAction('reorder', task.id)}
+                              onClick={() => handleTaskAction('reorder', task.id)}
                               className="bg-brand-600 text-white px-3 py-1 rounded-lg text-xs font-medium hover:bg-brand-700 transition-colors"
                             >
                               Reorder
                             </button>
                             <button
-                              onClick={() => onAction('rate', task.id)}
+                              onClick={() => handleTaskAction('rate', task.id)}
                               className="bg-amber-50 text-amber-600 px-3 py-1 rounded-lg text-xs font-medium hover:bg-amber-100 transition-colors"
                             >
                               Rate

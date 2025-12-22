@@ -169,17 +169,14 @@ const AuthenticatedApp = () => {
               <Routes>
                 <Route
                   path="/"
-                  element={
-                    user.role === 'admin' ? <Navigate to="/admin" replace /> :
-                      user.role === 'atumwa' ? <Gigs /> :
-                        <Home />
-                  }
+                  element={<Navigate to="/dashboard" replace />}
                 />
                 <Route path="/admin" element={user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" />} />
                 <Route path="/dashboard" element={
-                  user.role === 'atumwa' ? <MessengerDashboard /> :
-                    user.role === 'client' ? <ClientDashboard /> :
-                      <Navigate to="/" />
+                  user.role === 'admin' ? <AdminDashboard /> :
+                    user.role === 'atumwa' ? <MessengerDashboard /> :
+                      user.role === 'client' ? <ClientDashboard /> :
+                        <Navigate to="/" />
                 } />
                 <Route path="/gigs" element={<Gigs />} />
                 <Route path="/map" element={<MapPage />} />
