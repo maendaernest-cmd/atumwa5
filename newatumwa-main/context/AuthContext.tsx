@@ -17,7 +17,7 @@ import {
 } from '../utils/authUtils';
 import { MOCK_ATUMWA, MOCK_CLIENT, MOCK_ADMIN } from '../constants';
 
-const DEV_MODE = process.env.REACT_APP_DEV_MODE === 'true';
+const DEV_MODE = true; // Forced for testing as per user request
 
 interface AuthContextType {
   user: User | null;
@@ -214,11 +214,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Production mode: Verify password
       if (!storedUser) {
-        recordFailedAttempt(email);
-        throw {
-          code: 'USER_NOT_FOUND',
-          message: 'Invalid email or password'
-        };
+        if (DEV_MODE && password === 'any') {
+          // Create a temporary guest user if it doesn't exist but password is 'any'
+          const guestUser: User = {
+            id: 'guest_' + Math.random().toString(36).substr(2, 9),
+            name: 'Guest User',
+            email: email,
+            role: 'client',
+            avatar: '/avatars/client.png',
+            rating: 5.0,
+            location: 'Harare',
+            isVerified: true,
+            emailVerified: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            failedLoginAttempts: 0
+          };
+          users.push(guestUser);
+          saveUsers(users);
+          storedUser = guestUser;
+        } else {
+          recordFailedAttempt(email);
+          throw {
+            code: 'USER_NOT_FOUND',
+            message: 'Invalid email or password'
+          };
+        }
       }
 
       if (!storedUser.passwordHash || !verifyPassword(password, storedUser.passwordHash)) {

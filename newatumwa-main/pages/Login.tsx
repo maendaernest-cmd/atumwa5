@@ -196,7 +196,26 @@ export const Login: React.FC = () => {
             </button>
           </div>
 
-          <p className="text-center mt-8 text-stone-500 text-sm font-medium">
+            {/* Demo Credentials Hint */}
+            <div className="mt-6 p-4 bg-brand-50/50 border border-brand-100 rounded-2xl">
+              <p className="text-[10px] font-black text-brand-600 uppercase tracking-widest mb-2">Test Credentials</p>
+              <div className="grid grid-cols-1 gap-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-stone-600">Client: client@atumwa.com</span>
+                  <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-brand-200 text-brand-600 font-bold">PW: any</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-stone-600">Runner: runner@atumwa.com</span>
+                  <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-brand-200 text-brand-600 font-bold">PW: any</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-stone-600">Admin: admin@atumwa.com</span>
+                  <span className="text-[10px] bg-white px-2 py-0.5 rounded-full border border-brand-200 text-brand-600 font-bold">PW: any</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-center mt-8 text-stone-500 text-sm font-medium">
             New to Atumwa?{' '}
             <Link to="/signup" className="text-brand-600 font-black hover:text-brand-700 transition-colors underline underline-offset-4">
               Create account
