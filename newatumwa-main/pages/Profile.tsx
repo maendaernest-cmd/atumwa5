@@ -7,6 +7,7 @@ import { Star, MapPin, Award, ChevronRight, CreditCard, Settings, LogOut, Shield
 import { motion } from 'framer-motion';
 import { usePWA } from '../hooks/usePWA';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { DashboardShell } from '../components/dashboard/DashboardShell';
 
 // Data for the chart
 const data = [
@@ -115,7 +116,8 @@ export const Profile: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <DashboardShell role={user.role as 'client' | 'atumwa' | 'admin' | 'support'} title="Profile & Settings">
+            <div className="max-w-4xl mx-auto space-y-6">
 
             {/* Quick Links */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
@@ -774,6 +776,7 @@ export const Profile: React.FC = () => {
                     </motion.div>
                 </div>
             )}
-        </div>
+            </div>
+        </DashboardShell>
     );
 };

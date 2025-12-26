@@ -12,38 +12,57 @@ import {
 import { DashboardShell } from '../../components/dashboard/DashboardShell';
 import { StatCard } from '../../components/StatCard';
 import { Link } from 'react-router-dom';
-
-const urgentTickets = [
-  { id: 'T-1042', user: 'Farai M.', issue: 'Payment not reflecting', priority: 'high', time: '12m ago' },
-  { id: 'T-1045', user: 'Sarah K.', issue: 'App crashing on checkout', priority: 'medium', time: '45m ago' },
-];
+import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { formatDistanceToNow, isToday, parseISO } from 'date-fns';
 
 const SupportDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const { supportTickets, feed, assignTicket } = useData();
+  const { addToast } = useToast();
+
+  const openTickets = supportTickets.filter(t => t.status === 'open');
+  const resolvedToday = supportTickets.filter(t => t.status === 'resolved' && t.resolvedAt && isToday(parseISO(t.resolvedAt)));
+
+  // Simple sort: high priority first, then by date.
+  const priorityTickets = [...openTickets].sort((a, b) => {
+    if (a.priority === 'high' && b.priority !== 'high') return -1;
+    if (a.priority !== 'high' && b.priority === 'high') return 1;
+    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+  }).slice(0, 5); // Show top 5
+
+  const handleAssign = (ticketId: string) => {
+    if (!user) return;
+    assignTicket(ticketId, user.id);
+    addToast('Ticket Assigned', `You are now the owner of ticket #${ticketId}.`, 'success');
+  };
+
   return (
     <DashboardShell role="support" title="Support Command">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           label="Open Tickets"
-          value="14"
+          value={openTickets.length}
           icon={TicketIcon}
           variant="brand"
           subtext="Requiring attention"
         />
         <StatCard
           label="Avg. Response"
-          value="8m"
+          value="8m" // Static for now
           icon={ClockIcon}
           subtext="Past 24 hours"
         />
         <StatCard
           label="Resolved Today"
-          value="32"
+          value={resolvedToday.length}
           icon={CheckCircleIcon}
           variant="slate"
         />
         <StatCard
           label="Active Chats"
-          value="5"
+          value="5" // Static for now
           icon={ChatBubbleLeftRightIcon}
           subtext="Live assistance"
         />
@@ -60,7 +79,7 @@ const SupportDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {urgentTickets.map(ticket => (
+              {priorityTickets.map(ticket => (
                 <div key={ticket.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-brand-200 transition-all group">
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${
@@ -72,13 +91,17 @@ const SupportDashboard: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{ticket.id}</span>
                         <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{ticket.time}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                          {formatDistanceToNow(parseISO(ticket.timestamp), { addSuffix: true })}
+                        </span>
                       </div>
-                      <h4 className="font-black text-slate-900 leading-tight mt-1">{ticket.issue}</h4>
-                      <p className="text-xs font-bold text-slate-500 mt-0.5">User: {ticket.user}</p>
+                      <h4 className="font-black text-slate-900 leading-tight mt-1">{ticket.subject}</h4>
+                      <p className="text-xs font-bold text-slate-500 mt-0.5">User: {ticket.sender.name}</p>
                     </div>
                   </div>
-                  <button className="text-brand-600 font-black text-[10px] uppercase tracking-widest px-6 py-3 bg-white border border-slate-100 rounded-xl hover:bg-brand-500 hover:text-white hover:border-brand-500 transition-all">
+                  <button 
+                    onClick={() => handleAssign(ticket.id)}
+                    className="text-brand-600 font-black text-[10px] uppercase tracking-widest px-6 py-3 bg-white border border-slate-100 rounded-xl hover:bg-brand-500 hover:text-white hover:border-brand-500 transition-all">
                     Assign to me
                   </button>
                 </div>
@@ -92,16 +115,12 @@ const SupportDashboard: React.FC = () => {
                <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-brand-400">Live Feed</div>
             </div>
             <div className="space-y-6">
-               {[
-                 { action: 'Ticket #T-1039 resolved', agent: 'Thabo', time: '5m ago' },
-                 { action: 'New message in #T-1042', agent: 'System', time: '12m ago' },
-                 { action: 'User "John D." initiated chat', agent: 'System', time: '18m ago' },
-               ].map((item, idx) => (
+               {feed.slice(0, 3).map((item, idx) => (
                  <div key={idx} className="flex items-start gap-4">
                     <div className="w-2 h-2 mt-1.5 rounded-full bg-brand-500"></div>
                     <div>
-                       <p className="text-sm font-bold text-slate-200">{item.action}</p>
-                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">By {item.agent} • {item.time}</p>
+                       <p className="text-sm font-bold text-slate-200">{item.content}</p>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mt-1">By {item.user.name} • {item.time}</p>
                     </div>
                  </div>
                ))}
@@ -132,9 +151,9 @@ const SupportDashboard: React.FC = () => {
                 <h3 className="text-lg font-black uppercase italic tracking-tight mb-2">Performance Goal</h3>
                 <p className="text-white/80 text-sm font-medium mb-4">Resolve 10 more tickets today to hit your daily target.</p>
                 <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                   <div className="h-full bg-white w-[68%]"></div>
+                   <div className="h-full bg-white" style={{ width: `${(resolvedToday.length / 32) * 100}%`}}></div>
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest mt-3 text-white/60">22 / 32 Resolved</p>
+                <p className="text-[10px] font-black uppercase tracking-widest mt-3 text-white/60">{resolvedToday.length} / 32 Resolved</p>
              </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import {
     Briefcase, ShoppingBag, ShieldCheck, ArrowRight, Globe, MapPin, Zap,
     CheckCircle, Smartphone, Clock, DollarSign, Users, Menu, X, Star, Truck, TrendingUp
 } from 'lucide-react';
+import { LiveDemo } from '../components/LiveDemo';
 
 const LandingNavbar = ({ onLogin, onNavigate }: { onLogin: (role: any) => void; onNavigate: (path: string) => void }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -87,8 +88,10 @@ export const Landing: React.FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'business' | 'worker'>('business');
 
+    const { loginAsTestUser } = useAuth();
+
     const handleLogin = (role: 'client' | 'atumwa' | 'admin') => {
-        login(role);
+        loginAsTestUser(role);
     };
 
     return (
@@ -258,6 +261,21 @@ export const Landing: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* --- INTERACTIVE DEMO --- */}
+            <section className="py-20 bg-stone-50">
+                <div className="max-w-7xl mx-auto px-4 md:px-8">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl md:text-6xl font-black text-stone-900 mb-4 tracking-tight">
+                            Experience Atumwa Live
+                        </h2>
+                        <p className="text-xl text-stone-600 max-w-3xl mx-auto">
+                            See exactly how our platform works from start to finish. No signup required.
+                        </p>
+                    </div>
+                    <LiveDemo />
                 </div>
             </section>
 

@@ -10,6 +10,11 @@ export interface User {
   location: string;
   jobsCompleted?: number;
   isVerified: boolean;
+  isOnline?: boolean;
+  isSuspended?: boolean;
+  isBanned?: boolean;
+  suspensionReason?: string;
+  banReason?: string;
   earnings?: number;
   completedTasks?: number;
   averageRating?: number;
@@ -126,6 +131,7 @@ export interface TimeWindow {
 
 export interface Gig {
   id: string;
+  orderNumber?: string;
   title: string;
   description: string;
   type: GigType;

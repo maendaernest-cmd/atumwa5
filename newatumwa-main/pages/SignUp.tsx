@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Twitter, Chrome, ArrowRight, ShoppingBag, Briefcase, ShieldCheck, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Chrome, AlertCircle, Loader, CheckCircle } from 'lucide-react';
 import { SignUpFormData } from '../types';
-import { validatePasswordStrength } from '../utils/authUtils';
 
 export const SignUp: React.FC = () => {
-  const { signup, loading, error, user } = useAuth();
+  const { signup, loading, error } = useAuth();
+  const { addToast } = useToast();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
-  
   const [formData, setFormData] = useState<SignUpFormData>({
     name: '',
     email: '',
@@ -23,225 +20,147 @@ export const SignUp: React.FC = () => {
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Validate password strength as user types
-    if (name === 'password' && value) {
-      const validation = validatePasswordStrength(value);
-      setPasswordErrors(validation.errors);
-    } else if (name === 'password' && !value) {
-      setPasswordErrors([]);
-    }
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Check terms
-    if (!agreeToTerms) {
-      return;
-    }
+    if (!formData.agreeToTerms) return;
 
-    await signup({
-      ...formData,
-      agreeToTerms
-    });
+    await signup(formData);
+  };
+
+  const handleSocialSignup = (provider: string) => {
+    addToast(`${provider} signup`, 'Redirecting to authentication...', 'message');
+    setTimeout(() => {
+      addToast('Success', `Account created with ${provider}!`, 'success');
+      navigate('/dashboard');
+    }, 2000);
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 font-sans flex">
-      {/* Left Section - Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 lg:px-16 py-12 bg-white">
-        <div className="max-w-md w-full mx-auto">
-          {/* Logo & Branding */}
-          <div className="flex items-center gap-3 mb-8">
-            <img
-              src="/atumwa-logo.jpeg"
-              alt="Atumwa Logo"
-              className="w-12 h-12 rounded-2xl object-cover shadow-sm"
-            />
-            <span className="font-bold text-2xl tracking-tight text-stone-900 italic">Atumwa</span>
-          </div>
+    <div className="min-h-screen bg-white font-sans flex flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <img
+            src="/atumwa-logo.jpeg"
+            alt="Atumwa Logo"
+            className="w-8 h-8 rounded"
+          />
+          <Link
+            to="/login"
+            className="text-gray-600 hover:text-gray-900 font-medium"
+          >
+            Sign in
+          </Link>
+        </div>
+      </div>
 
-          <h1 className="text-3xl lg:text-4xl font-black text-stone-900 mb-2 leading-tight">
-            Create your account
-          </h1>
-          <p className="text-stone-500 mb-8 font-medium">Join the logistics revolution in Zimbabwe.</p>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-8">
+        <div className="max-w-md mx-auto w-full">
+          {/* Title */}
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Make the most of your professional life</h1>
+          <p className="text-gray-600 text-sm mb-8">Get started - it's free.</p>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
-              <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+              <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={18} />
               <div>
-                <p className="text-sm font-bold text-red-900">{error.message}</p>
+                <p className="text-sm font-medium text-red-900">{error.message}</p>
               </div>
             </div>
           )}
 
-          {/* Success Message */}
-          {user && !error && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
-              <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
-              <div>
-                <p className="text-sm font-bold text-green-900">Account created! Redirecting...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Role Selection */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          {/* Social Signup */}
+          <div className="space-y-3 mb-6">
             <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, role: 'client' }))}
-              disabled={loading}
-              className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 disabled:opacity-50 ${formData.role === 'client' ? 'border-brand-600 bg-brand-50/50 shadow-lg shadow-brand-100' : 'border-stone-100 hover:border-stone-200'}`}
+              onClick={() => handleSocialSignup('Google')}
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.role === 'client' ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
-                <ShoppingBag size={20} />
-              </div>
-              <span className={`font-bold text-sm ${formData.role === 'client' ? 'text-brand-900' : 'text-stone-500'}`}>I want to Send</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData(prev => ({ ...prev, role: 'atumwa' }))}
-              disabled={loading}
-              className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 disabled:opacity-50 ${formData.role === 'atumwa' ? 'border-brand-600 bg-brand-50/50 shadow-lg shadow-brand-100' : 'border-stone-100 hover:border-stone-200'}`}
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${formData.role === 'atumwa' ? 'bg-brand-600 text-white' : 'bg-stone-100 text-stone-500'}`}>
-                <Briefcase size={20} />
-              </div>
-              <span className={`font-bold text-sm ${formData.role === 'atumwa' ? 'text-brand-900' : 'text-stone-500'}`}>I want to Earn</span>
+              <Chrome size={20} className="text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Continue with Google</span>
             </button>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Full Name</label>
-              <input
-                type="text"
-                name="name"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleInputChange}
-                disabled={loading}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium disabled:opacity-50"
-                required
-              />
+          {/* Divider */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
             </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Email Address</label>
+          {/* Signup Form */}
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
               <input
                 type="email"
                 name="email"
-                placeholder="john@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
-                disabled={loading}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium disabled:opacity-50"
                 required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="name@company.com"
               />
             </div>
 
-            <div className="space-y-1 relative">
-              <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Password</label>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleInputChange}
-                disabled={loading}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14 disabled:opacity-50"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
-                className="absolute right-5 top-[38px] text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-
-            {/* Password Strength Indicators */}
-            {formData.password && (
-              <div className="bg-stone-50 p-3 rounded-2xl space-y-2">
-                <p className="text-xs font-bold text-stone-600">Password Requirements:</p>
-                <div className="space-y-1">
-                  <div className={`text-xs font-medium ${formData.password.length >= 8 ? 'text-green-600' : 'text-stone-500'}`}>
-                    {formData.password.length >= 8 ? '✓' : '○'} At least 8 characters
-                  </div>
-                  <div className={`text-xs font-medium ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-stone-500'}`}>
-                    {/[A-Z]/.test(formData.password) ? '✓' : '○'} One uppercase letter
-                  </div>
-                  <div className={`text-xs font-medium ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-stone-500'}`}>
-                    {/[a-z]/.test(formData.password) ? '✓' : '○'} One lowercase letter
-                  </div>
-                  <div className={`text-xs font-medium ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-stone-500'}`}>
-                    {/[0-9]/.test(formData.password) ? '✓' : '○'} One number
-                  </div>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password (6 or more characters)
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-            )}
-
-            <div className="space-y-1 relative">
-              <label className="text-xs font-black text-stone-400 uppercase tracking-widest pl-1">Confirm Password</label>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                disabled={loading}
-                className="w-full px-5 py-4 bg-stone-50 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all font-medium pr-14 disabled:opacity-50"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                disabled={loading}
-                className="absolute right-5 top-[38px] text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50"
-              >
-                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
-
-            {/* Messenger Info */}
-            {formData.role === 'atumwa' && (
-              <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex gap-3 animate-in fade-in slide-in-from-top-2">
-                <ShieldCheck className="text-amber-600 shrink-0" size={20} />
-                <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                  Messengers require admin review before they can start taking jobs. This usually takes less than 24 hours.
-                </p>
-              </div>
-            )}
 
             {/* Terms Agreement */}
-            <div className="flex items-start gap-3">
+            <div className="flex items-start">
               <input
                 type="checkbox"
-                id="terms"
-                checked={agreeToTerms}
-                onChange={(e) => setAgreeToTerms(e.target.checked)}
-                disabled={loading}
-                className="mt-1 w-5 h-5 rounded border-stone-300 text-brand-600 focus:ring-brand-500 disabled:opacity-50"
+                id="agreeToTerms"
+                checked={formData.agreeToTerms}
+                onChange={(e) => setFormData({...formData, agreeToTerms: e.target.checked})}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-0.5"
               />
-              <label htmlFor="terms" className="text-xs text-stone-600 font-medium">
-                I agree to the <Link to="/terms" className="text-brand-600 font-bold hover:underline">Terms of Service</Link> and <Link to="/privacy" className="text-brand-600 font-bold hover:underline">Privacy Policy</Link>
+              <label htmlFor="agreeToTerms" className="ml-2 text-sm text-gray-700 leading-relaxed">
+                I agree to the Atumwa{' '}
+                <Link to="/terms" className="text-blue-600 hover:text-blue-700">User Agreement</Link>,{' '}
+                <Link to="/privacy" className="text-blue-600 hover:text-blue-700">Privacy Policy</Link>, and{' '}
+                <Link to="/cookies" className="text-blue-600 hover:text-blue-700">Cookie Policy</Link>.
               </label>
             </div>
 
+            {/* Sign Up Button */}
             <button
               type="submit"
-              disabled={loading || !agreeToTerms}
-              className="w-full bg-stone-900 hover:bg-stone-800 disabled:bg-stone-400 text-white py-5 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 group shadow-xl shadow-stone-200 active:scale-[0.98] disabled:active:scale-100"
+              disabled={loading || !formData.agreeToTerms}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -249,90 +168,21 @@ export const SignUp: React.FC = () => {
                   Creating account...
                 </>
               ) : (
-                <>
-                  {formData.role === 'client' ? 'Start Posting Errands' : 'Start Delivering & Earning'}
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                </>
+                'Agree & Join'
               )}
             </button>
           </form>
 
-          {/* Social Divider */}
-          <div className="flex items-center gap-4 my-8">
-            <div className="flex-1 h-px bg-stone-100"></div>
-            <span className="text-[10px] text-stone-400 font-black uppercase tracking-widest">Or continue with</span>
-            <div className="flex-1 h-px bg-stone-100"></div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 py-4 border border-stone-200 rounded-2xl hover:bg-stone-50 transition-all font-bold text-sm text-stone-700">
-              <Chrome size={18} /> Google
-            </button>
-            <button className="flex items-center justify-center gap-2 py-4 border border-stone-200 rounded-2xl hover:bg-stone-50 transition-all font-bold text-sm text-stone-700">
-              <Twitter size={18} /> Twitter
-            </button>
-          </div>
-
-          <p className="text-center mt-8 text-stone-500 text-sm font-medium">
-            Already a member?{' '}
-            <Link to="/login" className="text-brand-600 font-black hover:text-brand-700 transition-colors underline underline-offset-4">
-              Login here
+          {/* Sign In Link */}
+          <div className="mt-8 text-center">
+            <span className="text-gray-600 text-sm">Already on Atumwa? </span>
+            <Link
+              to="/login"
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
+              Sign in
             </Link>
-          </p>
-        </div>
-      </div>
-
-      {/* Right Section - Visual */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        {/* Background Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80)'
-          }}
-        >
-          <div className="absolute inset-0 bg-black/40"></div>
-        </div>
-
-        {/* Floating Card */}
-        <div className="absolute top-12 right-12 bg-white rounded-2xl p-6 shadow-2xl max-w-xs">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-2xl font-black text-stone-900">+89%</span>
-            <button className="bg-black text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-stone-800 transition-colors">
-              Join Atumwa
-            </button>
           </div>
-          <p className="text-stone-600 text-sm">
-            Positive respond from people.
-          </p>
-        </div>
-
-        {/* Center Message */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white">
-            <h2 className="text-4xl lg:text-6xl font-black mb-4 leading-tight">
-              We are a Family.
-            </h2>
-            <p className="text-lg lg:text-xl text-white/90 max-w-md leading-relaxed">
-              Join our community of messengers and clients building something special together. Every delivery strengthens our bonds.
-            </p>
-          </div>
-        </div>
-
-        {/* Tags/Badges */}
-        <div className="absolute bottom-12 left-12 flex flex-wrap gap-3">
-          <span className="bg-orange-500/20 text-white border border-orange-400/30 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
-            #Atumwa_Life
-          </span>
-          <span className="bg-green-500/20 text-white border border-green-400/30 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
-            #Harare_Hustle
-          </span>
-          <span className="bg-blue-500/20 text-white border border-blue-400/30 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
-            #Get_It_Done
-          </span>
-          <span className="bg-pink-500/20 text-white border border-pink-400/30 px-4 py-2 rounded-full text-sm font-semibold backdrop-blur-sm">
-            #Be_Happy
-          </span>
         </div>
       </div>
     </div>

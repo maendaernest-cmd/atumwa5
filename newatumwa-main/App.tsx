@@ -34,7 +34,7 @@ const AdminTransactionsDetail = lazy(() => import('./pages/admin/AdminTransactio
 const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
 const ClientGigs = lazy(() => import('./pages/client/ClientGigs'));
 const ClientGigDetail = lazy(() => import('./pages/client/ClientGigDetail'));
-const ClientNewGig = lazy(() => import('./pages/client/ClientNewGig'));
+const PostGigPage = lazy(() => import('./pages/client/PostGigPage'));
 const ClientMap = lazy(() => import('./pages/client/ClientMap'));
 const ClientMessages = lazy(() => import('./pages/client/ClientMessages'));
 const ClientProfile = lazy(() => import('./pages/client/ClientProfile'));
@@ -44,6 +44,7 @@ const WorkerDashboard = lazy(() => import('./pages/worker/WorkerDashboard'));
 const WorkerFind = lazy(() => import('./pages/worker/WorkerFind'));
 const WorkerActive = lazy(() => import('./pages/worker/WorkerActive'));
 const WorkerEarnings = lazy(() => import('./pages/worker/WorkerEarnings'));
+const WorkerMap = lazy(() => import('./pages/worker/WorkerMap'));
 
 // Support
 const SupportDashboard = lazy(() => import('./pages/support/SupportDashboard'));
@@ -204,9 +205,10 @@ const AuthenticatedApp = () => {
                 {/* Client Routes */}
                 <Route path="/dashboard/client" element={user.role === 'client' ? <ClientDashboard /> : <Navigate to="/" />} />
                 <Route path="/dashboard/client/gigs" element={user.role === 'client' ? <ClientGigs /> : <Navigate to="/" />} />
-                <Route path="/dashboard/client/gigs/new" element={user.role === 'client' ? <ClientNewGig /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/gigs/new" element={user.role === 'client' ? <PostGigPage /> : <Navigate to="/" />} />
                 <Route path="/dashboard/client/gigs/:id" element={user.role === 'client' ? <ClientGigDetail /> : <Navigate to="/" />} />
                 <Route path="/dashboard/client/map" element={user.role === 'client' ? <ClientMap /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/messages" element={user.role === 'client' ? <ClientMessages /> : <Navigate to="/" />} />
                 <Route path="/dashboard/client/profile" element={user.role === 'client' ? <ClientProfile /> : <Navigate to="/" />} />
 
                 {/* Worker Routes */}
@@ -214,6 +216,7 @@ const AuthenticatedApp = () => {
                 <Route path="/dashboard/worker/find" element={user.role === 'atumwa' ? <WorkerFind /> : <Navigate to="/" />} />
                 <Route path="/dashboard/worker/active" element={user.role === 'atumwa' ? <WorkerActive /> : <Navigate to="/" />} />
                 <Route path="/dashboard/worker/earnings" element={user.role === 'atumwa' ? <WorkerEarnings /> : <Navigate to="/" />} />
+                <Route path="/dashboard/worker/map" element={user.role === 'atumwa' ? <WorkerMap /> : <Navigate to="/" />} />
 
                 {/* Support Routes */}
                 <Route path="/dashboard/support" element={user.role === 'support' ? <SupportDashboard /> : <Navigate to="/" />} />

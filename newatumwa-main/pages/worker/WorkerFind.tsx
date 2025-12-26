@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   MagnifyingGlassIcon, 
   MapPinIcon, 
@@ -10,16 +10,54 @@ import {
 } from '@heroicons/react/24/outline';
 import { DashboardShell } from '../../components/dashboard/DashboardShell';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { Gig } from '../../types';
 
-const availableGigs = [
-  { id: '101', title: 'Medical Supply Delivery', client: 'Avenues Clinic', price: 15.50, distance: '1.2km', time: '15m ago', type: 'prescription', urgency: 'high' },
-  { id: '102', title: 'Grocery Pickup - Pick n Pay', client: 'Sarah M.', price: 22.00, distance: '3.5km', time: '25m ago', type: 'shopping', urgency: 'standard' },
-  { id: '103', title: 'Corporate Document Courier', client: 'Zim-Asset Corp', price: 12.00, distance: '0.8km', time: '5m ago', type: 'paperwork', urgency: 'priority' },
-  { id: '104', title: 'E-Commerce Parcel Delivery', client: 'Shopify Store', price: 8.50, distance: '5.2km', time: '1h ago', type: 'parcel', urgency: 'standard' },
-];
+type FilterType = 'all' | 'high pay' | 'nearby' | 'urgent';
 
 export default function WorkerFind() {
-  const [filter, setFilter] = useState('all');
+  const { user } = useAuth();
+  const { gigs, assignGig } = useData();
+  const { addToast } = useToast();
+  
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const availableGigs = useMemo(() => {
+    // Start with open gigs that are not assigned
+    let openGigs = gigs.filter(g => g.status === 'open' && !g.assignedTo);
+
+    // Apply search query
+    if (searchQuery) {
+      openGigs = openGigs.filter(g =>
+        g.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        g.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        g.locationStart.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply filters
+    switch (filter) {
+      case 'high pay':
+        return openGigs.sort((a, b) => b.price - a.price);
+      case 'nearby':
+        // Note: Simple string sort on distance. For real app, use numeric distance.
+        return openGigs.sort((a, b) => parseFloat(a.distance.replace('km','')) - parseFloat(b.distance.replace('km','')));
+      case 'urgent':
+        return openGigs.filter(g => g.urgency === 'priority' || g.urgency === 'express');
+      case 'all':
+      default:
+        return openGigs;
+    }
+  }, [gigs, searchQuery, filter]);
+  
+  const handleAcceptGig = (gigId: string) => {
+    if (!user) return;
+    assignGig(gigId, user.id);
+    addToast('Gig Accepted!', 'The task has been added to your active list.', 'success');
+  };
 
   return (
     <DashboardShell role="worker" title="Find Work">
@@ -31,11 +69,13 @@ export default function WorkerFind() {
             <input 
               type="text" 
               placeholder="Search by area or task type..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-brand-500 transition-all"
             />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto">
-            {['all', 'high pay', 'nearby', 'urgent'].map((f) => (
+            {(['all', 'high pay', 'nearby', 'urgent'] as FilterType[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -52,7 +92,7 @@ export default function WorkerFind() {
         {/* Gig Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <AnimatePresence>
-            {availableGigs.map((gig) => (
+            {availableGigs.map((gig: Gig) => (
               <motion.div
                 layout
                 initial={{ opacity: 0, y: 20 }}
@@ -63,13 +103,15 @@ export default function WorkerFind() {
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className={`p-4 rounded-2xl ${
-                    gig.urgency === 'high' ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'
+                    gig.urgency === 'priority' || gig.urgency === 'express' ? 'bg-red-50 text-red-600' : 'bg-brand-50 text-brand-600'
                   }`}>
-                    {gig.urgency === 'high' ? <ClockIcon className="w-6 h-6 animate-pulse" /> : <MapPinIcon className="w-6 h-6" />}
+                    {gig.urgency === 'priority' || gig.urgency === 'express' ? <ClockIcon className="w-6 h-6 animate-pulse" /> : <MapPinIcon className="w-6 h-6" />}
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black text-slate-900">${gig.price.toFixed(2)}</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{gig.time}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      {formatDistanceToNow(parseISO(gig.postedAt))} ago
+                    </p>
                   </div>
                 </div>
 
@@ -86,12 +128,13 @@ export default function WorkerFind() {
 
                 <div className="flex items-center justify-between pt-6 border-t border-slate-50">
                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-black text-slate-500">
-                        {gig.client.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <span className="text-xs font-bold text-slate-600">{gig.client}</span>
+                      <img src={gig.postedBy.avatar} alt={gig.postedBy.name} className="w-8 h-8 rounded-full object-cover"/>
+                      <span className="text-xs font-bold text-slate-600">{gig.postedBy.name}</span>
                    </div>
-                   <button className="bg-slate-900 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-600 hover:shadow-lg transition-all active:scale-95">
+                   <button 
+                     onClick={() => handleAcceptGig(gig.id)}
+                     className="bg-slate-900 text-white px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-600 hover:shadow-lg transition-all active:scale-95"
+                   >
                      Accept Gig
                    </button>
                 </div>
@@ -103,3 +146,6 @@ export default function WorkerFind() {
     </DashboardShell>
   );
 }
+
+// Helper function to format time since posting
+import { formatDistanceToNow, parseISO } from 'date-fns';

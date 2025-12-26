@@ -47,6 +47,8 @@ interface DataContextType {
     confirmPayment: (gigId: string, method: string) => void;
     createTicket: (ticket: any) => void;
     updateTicketStatus: (ticketId: string, status: string) => void;
+    assignTicket: (ticketId: string, agentId: string) => void;
+    updateChecklistItem: (gigId: string, checklistItemId: string, completed: boolean) => void;
     sharedLocations: Record<string, boolean>;
     toggleGPSSharing: (userId: string, active: boolean) => void;
     
@@ -57,6 +59,11 @@ interface DataContextType {
     logAdminAction: (adminId: string, action: string, targetId: string, targetType: 'user' | 'gig' | 'dispute' | 'setting', details: any) => void;
     updateAdminSettings: (settings: Partial<AdminSettings>) => void;
     updateUserRole: (userId: string, newRole: string, adminId: string) => void;
+    toggleWorkerStatus: (userId: string, isOnline: boolean) => void;
+    rateGig: (gigId: string, rating: number, review: string) => void;
+    createChatThread: (gigId: string, client: User, worker: User) => void;
+    confirmGigDelivery: (gigId: string) => void;
+    tipWorker: (gigId: string, tipAmount: number) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -169,15 +176,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const assignGig = (gigId: string, userId: string) => {
         setGigs(prev => prev.map(g => {
             if (g.id === gigId) {
-                return {
+                const orderNumber = `ATMW-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+                const updatedGig = {
                     ...g,
                     assignedTo: userId,
                     status: 'in-progress',
-                    assignedAt: new Date().toISOString()
+                    assignedAt: new Date().toISOString(),
+                    orderNumber,
                 };
+                
+                // Automatically create a chat thread
+                const client = users.find(u => u.id === g.postedBy.id);
+                const worker = users.find(u => u.id === userId);
+
+                if (client && worker) {
+                    createChatThread(updatedGig.id, client, worker);
+                }
+
+                return updatedGig;
             }
             return g;
         }));
+    };
+
+    const createChatThread = (gigId: string, client: User, worker: User) => {
+        const newChatId = `chat-${gigId}`;
+        const newChat: ChatThread = {
+            id: newChatId,
+            participant: worker, // For the client's view, the participant is the worker
+            lastMessage: 'Gig assigned! Say hello to your messenger.',
+            lastMessageTime: new Date().toISOString(),
+            unreadCount: 1,
+            relatedGigId: gigId,
+        };
+
+        const existingChat = chats.find(c => c.id === newChatId);
+        if (!existingChat) {
+            setChats(prev => [newChat, ...prev]);
+        }
     };
 
     const addMessage = (chatId: string, message: Message) => {
@@ -287,7 +323,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const updateTicketStatus = (ticketId: string, status: string) => {
-        setSupportTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
+        setSupportTickets(prev => prev.map(t => {
+            if (t.id === ticketId) {
+                const updatedTicket = { ...t, status };
+                if (status === 'resolved' || status === 'closed') {
+                    updatedTicket.resolvedAt = new Date().toISOString();
+                }
+                return updatedTicket;
+            }
+            return t;
+        }));
+    };
+
+    const assignTicket = (ticketId: string, agentId: string) => {
+        setSupportTickets(prev => prev.map(t => 
+            t.id === ticketId ? { ...t, assignedTo: agentId, status: 'in-progress' } : t
+        ));
+    };
+
+    const updateChecklistItem = (gigId: string, checklistItemId: string, completed: boolean) => {
+        setGigs(prev => prev.map(g => {
+            if (g.id === gigId) {
+                return {
+                    ...g,
+                    checklist: g.checklist.map(item => 
+                        item.id === checklistItemId ? { ...item, completed } : item
+                    )
+                };
+            }
+            return g;
+        }));
     };
 
     const toggleGPSSharing = (userId: string, active: boolean) => {
@@ -352,6 +417,98 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logAdminAction(adminId, 'update_role', userId, 'user', { newRole });
     };
 
+    const toggleWorkerStatus = (userId: string, isOnline: boolean) => {
+        setUsers(prev => prev.map(u =>
+            u.id === userId ? { ...u, isOnline } : u
+        ));
+    };
+
+    const rateGig = (gigId: string, rating: number, review: string) => {
+        let gigToUpdate: Gig | undefined;
+        
+        setGigs(prev => prev.map(g => {
+            if (g.id === gigId) {
+                gigToUpdate = { ...g, clientRating: rating, clientReview: review, status: 'verified' };
+                return gigToUpdate;
+            }
+            return g;
+        }));
+
+        if (gigToUpdate && gigToUpdate.assignedTo) {
+            const workerId = gigToUpdate.assignedTo;
+            setUsers(prev => prev.map(u => {
+                if (u.id === workerId) {
+                    const currentTotalRating = u.rating * (u.jobsCompleted || 0);
+                    const newJobsCompleted = (u.jobsCompleted || 0) + 1;
+                    const newAverageRating = (currentTotalRating + rating) / newJobsCompleted;
+                    return {
+                        ...u,
+                        rating: newAverageRating,
+                        jobsCompleted: newJobsCompleted,
+                    };
+                }
+                return u;
+            }));
+        }
+    };
+
+    const confirmGigDelivery = (gigId: string) => {
+        const gig = gigs.find(g => g.id === gigId);
+        if (gig && gig.assignedTo) {
+            updateGigStatus(gigId, 'completed'); // Set status to completed
+
+            // Process payment to worker (simplified)
+            const transaction: WalletTransaction = {
+                id: `tx-${Date.now()}`,
+                date: new Date().toISOString().split('T')[0],
+                amount: gig.price,
+                type: 'credit', // Credit to worker
+                description: `Payment for Gig: ${gig.title} (Order #${gig.orderNumber})`,
+                status: 'completed',
+                gigId: gig.id,
+                userId: gig.assignedTo, // Associate with worker
+            };
+            setWalletHistory(prev => [transaction, ...prev]);
+
+            // Worker earnings updated via tipWorker function
+        }
+    };
+
+    const tipWorker = (gigId: string, tipAmount: number) => {
+        let gigToUpdate: Gig | undefined;
+
+        setGigs(prev => prev.map(g => {
+            if (g.id === gigId) {
+                gigToUpdate = { ...g, tipAmount: (g.tipAmount || 0) + tipAmount };
+                return gigToUpdate;
+            }
+            return g;
+        }));
+
+        if (gigToUpdate && gigToUpdate.assignedTo) {
+            const workerId = gigToUpdate.assignedTo;
+            setUsers(prev => prev.map(u => {
+                if (u.id === workerId) {
+                    return { ...u, earnings: (u.earnings || 0) + tipAmount };
+                }
+                return u;
+            }));
+
+            const transaction: WalletTransaction = {
+                id: `tip-tx-${Date.now()}`,
+                date: new Date().toISOString().split('T')[0],
+                amount: tipAmount,
+                type: 'credit', // Credit to worker
+                description: `Tip for Gig: ${gigToUpdate.title} (Order #${gigToUpdate.orderNumber})`,
+                status: 'completed',
+                gigId: gigId,
+                userId: workerId, // Associate with worker
+            };
+            setWalletHistory(prev => [transaction, ...prev]);
+        }
+    };
+
+
     return (
         <DataContext.Provider value={{
             users,
@@ -376,6 +533,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             confirmPayment,
             createTicket,
             updateTicketStatus,
+            assignTicket,
             sharedLocations,
             toggleGPSSharing,
             suspendUser,
@@ -383,7 +541,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             unsuspendUser,
             logAdminAction,
             updateAdminSettings,
-            updateUserRole
+            updateUserRole,
+            toggleWorkerStatus,
+            rateGig,
+            createChatThread,
+            confirmGigDelivery,
+            tipWorker
         }}>
             {children}
         </DataContext.Provider>
