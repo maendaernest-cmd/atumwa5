@@ -114,6 +114,21 @@ const initializeDefaultUsers = (): User[] => {
       updatedAt: new Date().toISOString(),
       failedLoginAttempts: 0,
       passwordHash: hashPassword('any')
+    },
+    {
+      id: 'mock_support_1',
+      name: 'Test Support',
+      email: 'support@atumwa.com',
+      role: 'support',
+      avatar: '/avatars/support.png',
+      rating: 4.7,
+      location: 'Harare',
+      isVerified: true,
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      failedLoginAttempts: 0,
+      passwordHash: hashPassword('any')
     }
   ];
   return defaultUsers;

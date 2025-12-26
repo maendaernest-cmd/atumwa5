@@ -22,9 +22,33 @@ const Login = lazy(() => import('./pages/Login').then(module => ({ default: modu
 const SignUp = lazy(() => import('./pages/SignUp').then(module => ({ default: module.SignUp })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail').then(module => ({ default: module.VerifyEmail })));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const MessengerDashboard = lazy(() => import('./pages/MessengerDashboard').then(module => ({ default: module.MessengerDashboard })));
-const ClientDashboard = lazy(() => import('./pages/ClientDashboard').then(module => ({ default: module.ClientDashboard })));
+
+// Modular Dashboard Pages
+// Admin
+const AdminOverview = lazy(() => import('./pages/admin/AdminOverview'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminUserDetail = lazy(() => import('./pages/admin/AdminUserDetail'));
+const AdminTransactionsDetail = lazy(() => import('./pages/admin/AdminTransactionsDetail'));
+
+// Client
+const ClientDashboard = lazy(() => import('./pages/client/ClientDashboard'));
+const ClientGigs = lazy(() => import('./pages/client/ClientGigs'));
+const ClientGigDetail = lazy(() => import('./pages/client/ClientGigDetail'));
+const ClientNewGig = lazy(() => import('./pages/client/ClientNewGig'));
+const ClientMap = lazy(() => import('./pages/client/ClientMap'));
+const ClientMessages = lazy(() => import('./pages/client/ClientMessages'));
+const ClientProfile = lazy(() => import('./pages/client/ClientProfile'));
+
+// Worker
+const WorkerDashboard = lazy(() => import('./pages/worker/WorkerDashboard'));
+const WorkerFind = lazy(() => import('./pages/worker/WorkerFind'));
+const WorkerActive = lazy(() => import('./pages/worker/WorkerActive'));
+const WorkerEarnings = lazy(() => import('./pages/worker/WorkerEarnings'));
+
+// Support
+const SupportDashboard = lazy(() => import('./pages/support/SupportDashboard'));
+const SupportTickets = lazy(() => import('./pages/support/SupportTickets'));
+const SupportChat = lazy(() => import('./pages/support/SupportChat'));
 
 const AuthenticatedApp = () => {
   const { user } = useAuth();
@@ -43,11 +67,8 @@ const AuthenticatedApp = () => {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4 font-sans">
         <div className="max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in duration-500">
-          <div className="relative inline-block">
-            <div className="w-24 h-24 bg-amber-50 rounded-[2rem] flex items-center justify-center text-amber-600 mb-6 mx-auto relative z-10">
-              <Clock size={48} className="animate-pulse" />
-            </div>
-            <div className="absolute inset-0 bg-amber-200 blur-2xl opacity-20 animate-pulse"></div>
+          <div className="w-24 h-24 bg-amber-50 rounded-[2rem] flex items-center justify-center text-amber-600 mb-6 mx-auto relative z-10">
+            <Clock size={48} className="animate-pulse" />
           </div>
           <div>
             <h1 className="text-3xl font-black text-stone-900 mb-4 tracking-tight uppercase italic">Atumwa Pending</h1>
@@ -61,13 +82,13 @@ const AuthenticatedApp = () => {
               <div className="w-8 h-8 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
                 <CheckCircle size={18} />
               </div>
-              <span className="text-sm font-bold text-stone-700 font-sans">Identity details received</span>
+              <span className="text-xs font-bold text-stone-700 font-sans">Identity details received</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <span className="text-sm font-bold text-stone-700 font-sans">Background review in progress</span>
+              <span className="text-xs font-bold text-stone-700 font-sans">Background review in progress</span>
             </div>
           </div>
           <button
@@ -135,7 +156,9 @@ const AuthenticatedApp = () => {
                       ? "Welcome back! System metrics look healthy. Hope you find what you are looking for."
                       : user.role === 'atumwa'
                         ? "Welcome back! Ready to earn? Hope you find what you are looking for today."
-                        : "Welcome back! Need help with an errand? Hope you find what you are looking for."}
+                        : user.role === 'support'
+                          ? "Welcome back! Help users resolve their issues today. Success is in your hands."
+                          : "Welcome back! Need help with an errand? Hope you find what you are looking for."}
                   </p>
                 </div>
               </div>
@@ -171,13 +194,40 @@ const AuthenticatedApp = () => {
                   path="/"
                   element={<Navigate to="/dashboard" replace />}
                 />
-                <Route path="/admin" element={user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" />} />
+                
+                {/* Admin Routes */}
+                <Route path="/dashboard/admin" element={user.role === 'admin' ? <AdminOverview /> : <Navigate to="/" />} />
+                <Route path="/dashboard/admin/users" element={user.role === 'admin' ? <AdminUsers /> : <Navigate to="/" />} />
+                <Route path="/dashboard/admin/users/:id" element={user.role === 'admin' ? <AdminUserDetail /> : <Navigate to="/" />} />
+                <Route path="/dashboard/admin/transactions" element={user.role === 'admin' ? <AdminTransactionsDetail /> : <Navigate to="/" />} />
+
+                {/* Client Routes */}
+                <Route path="/dashboard/client" element={user.role === 'client' ? <ClientDashboard /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/gigs" element={user.role === 'client' ? <ClientGigs /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/gigs/new" element={user.role === 'client' ? <ClientNewGig /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/gigs/:id" element={user.role === 'client' ? <ClientGigDetail /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/map" element={user.role === 'client' ? <ClientMap /> : <Navigate to="/" />} />
+                <Route path="/dashboard/client/profile" element={user.role === 'client' ? <ClientProfile /> : <Navigate to="/" />} />
+
+                {/* Worker Routes */}
+                <Route path="/dashboard/worker" element={user.role === 'atumwa' ? <WorkerDashboard /> : <Navigate to="/" />} />
+                <Route path="/dashboard/worker/find" element={user.role === 'atumwa' ? <WorkerFind /> : <Navigate to="/" />} />
+                <Route path="/dashboard/worker/active" element={user.role === 'atumwa' ? <WorkerActive /> : <Navigate to="/" />} />
+                <Route path="/dashboard/worker/earnings" element={user.role === 'atumwa' ? <WorkerEarnings /> : <Navigate to="/" />} />
+
+                {/* Support Routes */}
+                <Route path="/dashboard/support" element={user.role === 'support' ? <SupportDashboard /> : <Navigate to="/" />} />
+                <Route path="/dashboard/support/tickets" element={user.role === 'support' ? <SupportTickets /> : <Navigate to="/" />} />
+                <Route path="/dashboard/support/chat" element={user.role === 'support' ? <SupportChat /> : <Navigate to="/" />} />
+
                 <Route path="/dashboard" element={
-                  user.role === 'admin' ? <AdminDashboard /> :
-                    user.role === 'atumwa' ? <MessengerDashboard /> :
-                      user.role === 'client' ? <ClientDashboard /> :
-                        <Navigate to="/" />
+                  user.role === 'admin' ? <Navigate to="/dashboard/admin" replace /> :
+                    user.role === 'atumwa' ? <Navigate to="/dashboard/worker" replace /> :
+                      user.role === 'client' ? <Navigate to="/dashboard/client" replace /> :
+                        user.role === 'support' ? <Navigate to="/dashboard/support" replace /> :
+                          <Navigate to="/" />
                 } />
+
                 <Route path="/gigs" element={<Gigs />} />
                 <Route path="/map" element={<MapPage />} />
                 <Route path="/messages" element={<Messages />} />

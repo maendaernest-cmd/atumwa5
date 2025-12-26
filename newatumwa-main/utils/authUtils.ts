@@ -171,7 +171,8 @@ export const isTestEmail = (email: string): boolean => {
     'client@atumwa.com',
     'runner@atumwa.com',
     'admin@atumwa.com',
-    'pending@atumwa.com'
+    'pending@atumwa.com',
+    'support@atumwa.com'
   ];
   return testEmails.includes(email) && DEV_MODE;
 };

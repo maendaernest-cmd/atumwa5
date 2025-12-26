@@ -352,9 +352,10 @@ interface PostGigModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (gigData: Omit<Gig, 'id' | 'postedBy' | 'postedAt' | 'distance' | 'status'>) => void;
+  prefillData?: Partial<Pick<Gig, 'title' | 'description' | 'type' | 'locationStart' | 'locationEnd' | 'paymentMethod'>>;
 }
 
-const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }) => {
+const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit, prefillData }) => {
   const { exchangeRates } = useData();
   const [formData, setFormData] = useState({
     title: '',
@@ -367,6 +368,17 @@ const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }
   });
   const [urgency, setUrgency] = useState<'standard' | 'express' | 'priority'>('standard');
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Prefill data when modal opens
+  useEffect(() => {
+    if (prefillData && isOpen) {
+      setFormData(prev => ({
+        ...prev,
+        ...prefillData
+      }));
+      setCurrentStep(1); // Reset to first step
+    }
+  }, [prefillData, isOpen]);
 
   // Dynamic Pricing Logic with ZiG conversion
   useEffect(() => {
@@ -401,6 +413,14 @@ const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }
     });
     setFormData({ title: '', description: '', type: 'shopping', price: '', locationStart: '', locationEnd: '', paymentMethod: 'cash_usd' });
     setUrgency('standard');
+    setCurrentStep(1);
+  };
+
+  const handleClose = () => {
+    onClose();
+    setFormData({ title: '', description: '', type: 'shopping', price: '', locationStart: '', locationEnd: '', paymentMethod: 'cash_usd' });
+    setUrgency('standard');
+    setCurrentStep(1);
   };
 
   return (
@@ -415,7 +435,7 @@ const PostGigModal: React.FC<PostGigModalProps> = ({ isOpen, onClose, onSubmit }
               <div className={`h-1.5 rounded-full transition-all duration-300 ${currentStep >= 3 ? 'w-4 bg-brand-500' : 'w-2 bg-slate-200'}`} />
             </div>
           </div>
-          <button onClick={onClose} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all border border-slate-100">
+          <button onClick={handleClose} className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all border border-slate-100">
             <X size={20} />
           </button>
         </div>
@@ -907,6 +927,7 @@ export const Gigs: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateGig}
+        prefillData={location.state?.prefillData}
       />
 
       <CompleteGigModal

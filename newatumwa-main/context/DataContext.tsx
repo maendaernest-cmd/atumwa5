@@ -36,6 +36,7 @@ interface DataContextType {
 
     // Actions
     addGig: (gig: Gig) => void;
+    updateGig: (gigId: string, updates: Partial<Gig>) => void;
     updateGigStatus: (gigId: string, status: string, price?: number) => void;
     assignGig: (gigId: string, userId: string) => void;
     addMessage: (chatId: string, message: Message) => void;
@@ -145,6 +146,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             comments: 0
         };
         setFeed(prev => [feedEntry, ...prev]);
+    };
+
+    const updateGig = (gigId: string, updates: Partial<Gig>) => {
+        setGigs(prev => prev.map(g => g.id === gigId ? { ...g, ...updates } : g));
     };
 
     const updateGigStatus = (gigId: string, status: string, price?: number) => {
@@ -360,6 +365,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             auditLog,
             adminSettings,
             addGig,
+            updateGig,
             updateGigStatus,
             assignGig,
             addMessage,

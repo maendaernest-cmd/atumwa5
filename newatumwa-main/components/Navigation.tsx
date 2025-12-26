@@ -1,11 +1,44 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Briefcase, Map, MessageSquare, User, LogOut, CheckCircle, Menu, X, LayoutDashboard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  Home, 
+  Briefcase, 
+  Map, 
+  MessageSquare, 
+  User, 
+  Users, 
+  LogOut, 
+  CheckCircle, 
+  Menu, 
+  X, 
+  LayoutDashboard, 
+  ChevronLeft, 
+  ChevronRight, 
+  Package, 
+  Truck, 
+  Settings, 
+  BarChart3, 
+  Shield, 
+  Wallet, 
+  Star, 
+  MapPin, 
+  Phone, 
+  Bell, 
+  CreditCard, 
+  AlertTriangle, 
+  Megaphone, 
+  HelpCircle, 
+  DollarSign, 
+  RefreshCcw,
+  List,
+  Search,
+  Activity
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '../utils/cn';
 
-const NavItem = ({ to, icon: Icon, label, isCollapsed }: { to: string; icon: any; label: string; isCollapsed?: boolean }) => (
+const NavItem = ({ to, icon: Icon, label, isCollapsed, ...props }: { to: string; icon: any; label: string; isCollapsed?: boolean; [key: string]: any }) => (
   <NavLink
     to={to}
     className={({ isActive }) =>
@@ -33,6 +66,55 @@ export const Navigation: React.FC = () => {
   const closeMobileMenu = () => setIsMobileOpen(false);
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
 
+  // Role-specific navigation configuration
+  const getNavigationItems = (role?: string) => {
+    const baseNavigation = {
+      home: {
+        to: role === 'admin' ? '/dashboard/admin' : role === 'client' ? '/dashboard/client' : role === 'atumwa' ? '/dashboard/worker' : role === 'support' ? '/dashboard/support' : '/',
+        icon: Home,
+        label: role === 'admin' ? '👑 Admin Dashboard' : role === 'client' ? '📦 Client Dashboard' : role === 'atumwa' ? '🚴 Messenger Dashboard' : role === 'support' ? '🆘 Support Dashboard' : '🏠 Home'
+      }
+    };
+
+    const roleNavigation = {
+      admin: [
+        { to: '/dashboard/admin', icon: Shield, label: '👑 Admin Dashboard' },
+        { to: '/dashboard/admin/users', icon: Users, label: '👥 User Control' },
+        { to: '/dashboard/admin/transactions', icon: DollarSign, label: '💰 Revenue Center' },
+        { to: '/admin?tab=analytics', icon: BarChart3, label: '📊 Platform Analytics' },
+        { to: '/admin?tab=fleet', icon: Truck, label: '🚛 Fleet Command' },
+        { to: '/admin?tab=moderation', icon: AlertTriangle, label: '⚖️ Dispute Court' },
+        { to: '/admin?tab=messaging', icon: Megaphone, label: '📢 Broadcast Center' },
+        { to: '/admin?tab=support', icon: HelpCircle, label: '🆘 Support Hub' },
+        { to: '/admin?tab=audit', icon: RefreshCcw, label: '📋 Audit Trail' },
+        { to: '/admin?tab=settings', icon: Settings, label: '⚙️ System Settings' }
+      ],
+      client: [
+        { to: '/dashboard/client', icon: LayoutDashboard, label: '📊 Overview' },
+        { to: '/dashboard/client/gigs', icon: Package, label: '📦 My Errands' },
+        { to: '/dashboard/client/gigs/new', icon: Briefcase, label: '💼 Post New Gig' },
+        { to: '/dashboard/client/map', icon: MapPin, label: '🗺️ Track Deliveries' },
+        { to: '/dashboard/client/messages', icon: MessageSquare, label: '💬 Messages' },
+        { to: '/dashboard/client/profile', icon: User, label: '👤 Profile' }
+      ],
+      atumwa: [
+        { to: '/dashboard/worker', icon: LayoutDashboard, label: '📊 Overview' },
+        { to: '/dashboard/worker/active', icon: Truck, label: '🚛 Active Tasks' },
+        { to: '/dashboard/worker/find', icon: Briefcase, label: '📋 Available Jobs' },
+        { to: '/dashboard/worker/earnings', icon: Wallet, label: '💰 Earnings' }
+      ],
+      support: [
+        { to: '/dashboard/support', icon: LayoutDashboard, label: '📊 Overview' },
+        { to: '/dashboard/support/tickets', icon: List, label: '🎫 Support Queue' },
+        { to: '/dashboard/support/chat', icon: MessageSquare, label: '💬 Live Chat' }
+      ]
+    };
+
+    return { baseNavigation, roleNavigation: roleNavigation[role as keyof typeof roleNavigation] || [] };
+  };
+
+  const { baseNavigation, roleNavigation } = getNavigationItems(user?.role);
+
   const SidebarContent = ({ isCollapsed }: { isCollapsed?: boolean }) => (
     <>
       <div className={cn(isCollapsed ? 'px-3' : 'px-6', 'mb-8 flex items-center justify-between')}>
@@ -56,6 +138,18 @@ export const Navigation: React.FC = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Role indicator badge */}
+          {user?.role && !isCollapsed && (
+            <div className={cn(
+              'px-2 py-1 rounded-full text-xs font-bold uppercase',
+              user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+              user.role === 'client' ? 'bg-blue-100 text-blue-700' :
+              user.role === 'support' ? 'bg-red-100 text-red-700' :
+              'bg-green-100 text-green-700'
+            )}>
+              {user.role}
+            </div>
+          )}
           {/* Collapse toggle button - only on desktop */}
           <button
             onClick={toggleCollapse}
@@ -72,17 +166,36 @@ export const Navigation: React.FC = () => {
       </div>
 
       <div className="flex flex-col space-y-1 overflow-y-auto flex-1" onClick={closeMobileMenu}>
-        <NavItem to="/" icon={Home} label="Home" isCollapsed={isCollapsed} />
-        {user?.role === 'admin' && (
-          <NavItem to="/admin" icon={LayoutDashboard} label="Admin" isCollapsed={isCollapsed} />
+        {/* Dynamic Home/Dashboard link */}
+        <NavItem
+          to={baseNavigation.home.to}
+          icon={baseNavigation.home.icon}
+          label={isCollapsed ? baseNavigation.home.label.split(' ')[0] : baseNavigation.home.label}
+          isCollapsed={isCollapsed}
+        />
+
+        {/* Role-specific navigation items */}
+        {roleNavigation.map((item, index) => (
+          <NavItem
+            to={item.to}
+            icon={item.icon}
+            label={isCollapsed ? item.label.split(' ')[0] : item.label}
+            isCollapsed={isCollapsed}
+            key={index}
+          />
+        ))}
+
+        {/* Common items for all logged-in users */}
+        {user && (
+          <>
+            <NavItem
+              to="/profile"
+              icon={User}
+              label={isCollapsed ? "👤" : "👤 Profile & Settings"}
+              isCollapsed={isCollapsed}
+            />
+          </>
         )}
-        {(user?.role === 'atumwa' || user?.role === 'client') && (
-          <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" isCollapsed={isCollapsed} />
-        )}
-        <NavItem to="/gigs" icon={Briefcase} label={user?.role === 'client' ? "My Gigs" : "Gigs"} isCollapsed={isCollapsed} />
-        <NavItem to="/map" icon={Map} label="Map" isCollapsed={isCollapsed} />
-        <NavItem to="/messages" icon={MessageSquare} label="Messages" isCollapsed={isCollapsed} />
-        <NavItem to="/profile" icon={User} label="Profile" isCollapsed={isCollapsed} />
       </div>
 
 

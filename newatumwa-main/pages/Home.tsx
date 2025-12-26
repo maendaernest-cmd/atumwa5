@@ -1,7 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { FEED_UPDATES, MOCK_GIGS, MOCK_ADMIN, MOCK_ATUMWA } from '../constants';
 import { useAuth } from '../context/AuthContext';
-import { ThumbsUp, MessageCircle, Share2, MapPin, Clock, CheckCircle, Bell, Info, Briefcase, MessageSquare, User, Star, Trophy, Zap, Heart, DollarSign, ShieldAlert, BarChart3, AlertTriangle, Megaphone, Users, TrendingUp, Activity, Navigation, FileText } from 'lucide-react';
+import {
+  HandThumbUpIcon,
+  ChatBubbleOvalLeftIcon,
+  ShareIcon,
+  MapPinIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  BellIcon,
+  InformationCircleIcon,
+  BriefcaseIcon,
+  ChatBubbleLeftRightIcon,
+  UserIcon,
+  StarIcon,
+  TrophyIcon,
+  BoltIcon,
+  HeartIcon,
+  CurrencyDollarIcon,
+  ShieldExclamationIcon,
+  ChartBarIcon,
+  ExclamationTriangleIcon,
+  MegaphoneIcon,
+  UsersIcon,
+  ArrowTrendingUpIcon,
+  PresentationChartLineIcon,
+  PaperAirplaneIcon,
+  DocumentTextIcon
+} from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 
@@ -149,7 +175,7 @@ export const Home: React.FC = () => {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-brand-50 rounded-lg flex items-center justify-center">
-                    <Briefcase className="text-brand-600" size={24} />
+                    <BriefcaseIcon className="text-brand-600 w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800">Post a Gig</h3>
@@ -167,7 +193,7 @@ export const Home: React.FC = () => {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                    <CheckCircle className="text-green-600" size={24} />
+                    <CheckCircleIcon className="text-green-600 w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800">Active Gigs</h3>
@@ -183,7 +209,7 @@ export const Home: React.FC = () => {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <MapPin className="text-blue-600" size={24} />
+                    <MapPinIcon className="text-blue-600 w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800">Live Tracking</h3>
@@ -199,7 +225,7 @@ export const Home: React.FC = () => {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                    <MessageSquare className="text-purple-600" size={24} />
+                    <ChatBubbleLeftRightIcon className="text-purple-600 w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-800">Messages</h3>
@@ -434,21 +460,21 @@ export const Home: React.FC = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <button onClick={() => navigate('/gigs')} className="flex flex-col items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Briefcase className="text-green-600" size={24} />
+                    <BriefcaseIcon className="text-green-600 w-6 h-6" />
                   </div>
                   <span className="text-sm font-medium text-slate-700">Accept Deliveries</span>
                 </button>
 
                 <button onClick={() => navigate('/map')} className="flex flex-col items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <MapPin className="text-blue-600" size={24} />
+                    <MapPinIcon className="text-blue-600 w-6 h-6" />
                   </div>
                   <span className="text-sm font-medium text-slate-700">Live Navigation</span>
                 </button>
 
                 <button onClick={() => navigate('/messages')} className="flex flex-col items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <MessageSquare className="text-purple-600" size={24} />
+                    <ChatBubbleLeftRightIcon className="text-purple-600 w-6 h-6" />
                   </div>
                   <span className="text-sm font-medium text-slate-700">Client Communication</span>
                 </button>

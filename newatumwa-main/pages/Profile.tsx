@@ -3,7 +3,9 @@ import { WALLET_HISTORY } from '../constants';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
-import { Star, MapPin, Award, ChevronRight, CreditCard, Settings, LogOut, ShieldCheck, Mail, Upload, CheckCircle, Loader2, AlertCircle, RefreshCw, X } from 'lucide-react';
+import { Star, MapPin, Award, ChevronRight, CreditCard, Settings, LogOut, ShieldCheck, Mail, Upload, CheckCircle, Loader2, AlertCircle, RefreshCw, X, Smartphone, Wifi, WifiOff, Bell } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { usePWA } from '../hooks/usePWA';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Data for the chart
@@ -18,7 +20,7 @@ const data = [
 ];
 
 export const Profile: React.FC = () => {
-    const { user, logout, verifyUser, updateUser } = useAuth();
+    const { user, logout, updateUser } = useAuth();
     const { addToast } = useToast();
     const navigate = useNavigate();
     const [verificationState, setVerificationState] = useState<'idle' | 'sending' | 'pending_code' | 'verifying' | 'uploading' | 'success'>('idle');
@@ -29,6 +31,8 @@ export const Profile: React.FC = () => {
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [editData, setEditData] = useState({ name: user?.name || '', avatar: user?.avatar || '', location: user?.location || '' });
     const [newMethodData, setNewMethodData] = useState({ type: 'mobile', name: '', details: '' });
+
+    const { isInstallable, isOffline, notificationPermission, installPWA, requestNotificationPermission, sendTestNotification } = usePWA();
 
     if (!user) return null;
 
@@ -61,7 +65,7 @@ export const Profile: React.FC = () => {
             );
             // Delay context update so user sees success message
             setTimeout(() => {
-                verifyUser();
+                updateUser({ isVerified: true });
             }, 2000);
         }, 1500);
     };
@@ -104,7 +108,7 @@ export const Profile: React.FC = () => {
                 );
                 // Verify user after success animation
                 setTimeout(() => {
-                    verifyUser();
+                    updateUser({ isVerified: true });
                 }, 2000);
             }, 2000);
         }
@@ -638,9 +642,65 @@ export const Profile: React.FC = () => {
                             </div>
                             <div>
                                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Security</h4>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-700 font-medium">Biometric Login</span>
-                                    <div className="w-10 h-6 bg-green-500 rounded-full relative"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-700 font-medium">Biometric Login</span>
+                                        <div className="w-10 h-6 bg-green-500 rounded-full relative"><div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-3">App & Notifications</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Smartphone size={18} className="text-slate-600" />
+                                            <span className="text-slate-700 font-medium">Install App</span>
+                                        </div>
+                                        {isInstallable ? (
+                                            <button
+                                                onClick={installPWA}
+                                                className="bg-brand-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-brand-700"
+                                            >
+                                                Install
+                                            </button>
+                                        ) : (
+                                            <span className="text-xs text-slate-500">Installed</span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            {isOffline ? <WifiOff size={18} className="text-red-600" /> : <Wifi size={18} className="text-green-600" />}
+                                            <span className="text-slate-700 font-medium">Online Status</span>
+                                        </div>
+                                        <span className={`text-xs font-bold ${isOffline ? 'text-red-600' : 'text-green-600'}`}>
+                                            {isOffline ? 'Offline' : 'Online'}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Bell size={18} className="text-slate-600" />
+                                            <span className="text-slate-700 font-medium">Push Notifications</span>
+                                        </div>
+                                        {notificationPermission === 'granted' ? (
+                                            <button
+                                                onClick={sendTestNotification}
+                                                className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-700"
+                                            >
+                                                Test
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={requestNotificationPermission}
+                                                className="bg-slate-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-700"
+                                            >
+                                                Enable
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
